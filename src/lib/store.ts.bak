@@ -1,0 +1,389 @@
+"use client";
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type {
+  EscrowState,
+  EscrowTransaction,
+  EscrowEvent,
+  EscrowEventLog,
+  Listing,
+  ViewId,
+  TransactionsTab,
+  WalletInfo,
+  WalletStatus,
+} from "./types";
+import {
+  MOCK_LISTINGS,
+  MOCK_TRANSACTIONS,
+  DEFAULT_CURRENT_ESCROW_ID,
+} from "./mock-data";
+import {
+  generateTxHash,
+  generateBlockNumber,
+  generateCID,
+} from "./format";
+
+// =====================================================================
+// Wallet store — simulate MetaMask connection
+// =====================================================================
+
+interface WalletStore {
+  wallet: WalletInfo;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+}
+
+const DEFAULT_WALLET: WalletInfo = {
+  address: "0x45aB3cD2e1F40a5B6c7D8e9F0a1B2c3D4e5F6a78",
+  chainId: "0x13882",
+  networkName: "Polygon Amoy Testnet",
+  balanceMatic: 1842.36,
+  status: "disconnected",
+};
+
+export const useWalletStore = create<WalletStore>()(
+  persist(
+    (set) => ({
+      wallet: DEFAULT_WALLET,
+      connect: async () => {
+        set((s) => ({ wallet: { ...s.wallet, status: "connecting" } }));
+        // Simulasi delay MetaMask popup
+        await new Promise((r) => setTimeout(r, 800));
+        set((s) => ({ wallet: { ...s.wallet, status: "connected" } }));
+      },
+      disconnect: () => {
+        set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
+      },
+    }),
+    {
+      name: "escrowchain-wallet",
+      partialize: (s) => ({ wallet: { ...s.wallet, status: "disconnected" } }),
+    },
+  ),
+);
+
+// =====================================================================
+// App store — view navigation, current listing, current tx, modals
+// =====================================================================
+
+interface AppStore {
+  view: ViewId;
+  transactionsTab: TransactionsTab;
+  selectedListingId: string | null;
+  selectedTransactionId: string | null;
+  metamaskModal: {
+    open: boolean;
+    step: "review" | "pending" | "confirmed" | "rejected";
+    title: string;
+    description: string;
+    action: string; // contract method name
+    amountLabel: string; // e.g. "562.5 MATIC"
+    onComplete?: () => void;
+    onReject?: () => void;
+  };
+  setView: (v: ViewId) => void;
+  setTransactionsTab: (t: TransactionsTab) => void;
+  openListing: (id: string) => void;
+  openTransaction: (id: string) => void;
+  openMetaMask: (cfg: {
+    title: string;
+    description: string;
+    action: string;
+    amountLabel: string;
+    onComplete?: () => void;
+    onReject?: () => void;
+  }) => void;
+  closeMetaMask: () => void;
+  confirmMetaMask: () => void;
+  rejectMetaMask: () => void;
+}
+
+export const useAppStore = create<AppStore>((set, get) => ({
+  view: "home",
+  transactionsTab: "active",
+  selectedListingId: null,
+  selectedTransactionId: DEFAULT_CURRENT_ESCROW_ID,
+  metamaskModal: {
+    open: false,
+    step: "review",
+    title: "",
+    description: "",
+    action: "",
+    amountLabel: "",
+  },
+  setView: (v) => set({ view: v }),
+  setTransactionsTab: (t) => set({ transactionsTab: t }),
+  openListing: (id) =>
+    set({ selectedListingId: id, view: "listing-detail" }),
+  openTransaction: (id) =>
+    set({
+      selectedTransactionId: id,
+      view: "transactions",
+      transactionsTab: "active",
+    }),
+  openMetaMask: (cfg) =>
+    set({
+      metamaskModal: {
+        open: true,
+        step: "review",
+        title: cfg.title,
+        description: cfg.description,
+        action: cfg.action,
+        amountLabel: cfg.amountLabel,
+        onComplete: cfg.onComplete,
+        onReject: cfg.onReject,
+      },
+    }),
+  closeMetaMask: () =>
+    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } })),
+  confirmMetaMask: async () => {
+    set((s) => ({ metamaskModal: { ...s.metamaskModal, step: "pending" } }));
+    await new Promise((r) => setTimeout(r, 1500));
+    set((s) => ({ metamaskModal: { ...s.metamaskModal, step: "confirmed" } }));
+    await new Promise((r) => setTimeout(r, 900));
+    const onComplete = get().metamaskModal.onComplete;
+    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } }));
+    onComplete?.();
+  },
+  rejectMetaMask: () => {
+    const onReject = get().metamaskModal.onReject;
+    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } }));
+    onReject?.();
+  },
+}));
+
+// =====================================================================
+// Listings store
+// =====================================================================
+
+interface ListingsStore {
+  listings: Listing[];
+  createListing: (input: Omit<Listing, "id" | "cid" | "status" | "createdAt">) => string;
+  getById: (id: string) => Listing | undefined;
+}
+
+export const useListingsStore = create<ListingsStore>((set, get) => ({
+  listings: MOCK_LISTINGS,
+  createListing: (input) => {
+    const id = `L-${String(get().listings.length + 1).padStart(3, "0")}`;
+    const newListing: Listing = {
+      ...input,
+      id,
+      cid: generateCID(),
+      status: "AVAILABLE",
+      createdAt: Date.now(),
+    };
+    set((s) => ({ listings: [newListing, ...s.listings] }));
+    return id;
+  },
+  getById: (id) => get().listings.find((l) => l.id === id),
+}));
+
+// =====================================================================
+// Escrow store — FSM state machine
+// =====================================================================
+// Ini adalah inti dari skripsi. State transition rules:
+//   NONE → DEPOSITED  (via createEscrow)
+//   DEPOSITED → HELD  (via seller confirmHold)
+//   HELD → RELEASED   (via buyer confirmReceived)
+//   HELD → REFUNDED   (via buyer requestRefund)
+// =====================================================================
+
+interface EscrowStore {
+  transactions: EscrowTransaction[];
+  getById: (id: string) => EscrowTransaction | undefined;
+  getActive: () => EscrowTransaction | undefined;
+  getHistory: () => EscrowTransaction[];
+  /** Buyer initiate purchase — NONE → DEPOSITED */
+  createEscrow: (listing: Listing, buyer: string) => string;
+  /** Seller confirms hold — DEPOSITED → HELD */
+  confirmHold: (txId: string, seller: string) => void;
+  /** Buyer confirms receipt — HELD → RELEASED */
+  confirmReceived: (txId: string) => void;
+  /** Buyer requests refund — HELD → REFUND_REQUESTED (menunggu approval seller) */
+  requestRefund: (txId: string) => void;
+  /** Seller approves refund — REFUND_REQUESTED → REFUNDED */
+  approveRefund: (txId: string) => void;
+  /** Seller rejects refund — REFUND_REQUESTED → HELD (kembali ke hold) */
+  rejectRefund: (txId: string) => void;
+}
+
+function nextTxNumber(existing: EscrowTransaction[]): string {
+  const nums = existing
+    .map((t) => parseInt(t.id.replace("#", ""), 10))
+    .filter((n) => !isNaN(n));
+  const max = nums.length ? Math.max(...nums) : 11;
+  return `#${max + 1}`;
+}
+
+function makeEvent(
+  txId: string,
+  event: EscrowEvent,
+  from: string,
+  data?: Record<string, string | number>,
+): EscrowEventLog {
+  return {
+    id: `evt-${txId}-${event}-${Date.now()}`,
+    event,
+    txHash: generateTxHash(),
+    blockNumber: generateBlockNumber(),
+    from,
+    timestamp: Date.now(),
+    data,
+  };
+}
+
+export const useEscrowStore = create<EscrowStore>((set, get) => ({
+  transactions: MOCK_TRANSACTIONS,
+  getById: (id) => get().transactions.find((t) => t.id === id),
+  getActive: () => {
+    const held = get().transactions.find((t) => t.state === "HELD");
+    return held ?? get().transactions.find((t) => t.state === "DEPOSITED");
+  },
+  getHistory: () =>
+    [...get().transactions].sort((a, b) => b.createdAt - a.createdAt),
+  createEscrow: (listing, buyer) => {
+    const id = nextTxNumber(get().transactions);
+    const now = Date.now();
+    const createdEvent = makeEvent(id, "EscrowCreated", buyer, {
+      amount: `${listing.priceMatic} MATIC`,
+      listingId: listing.id,
+    });
+    const depositEvent = makeEvent(id, "Deposited", buyer, {
+      amount: `${listing.priceMatic} MATIC`,
+    });
+    const tx: EscrowTransaction = {
+      id,
+      listingId: listing.id,
+      listing,
+      buyer,
+      seller: listing.seller,
+      amountMatic: listing.priceMatic,
+      amountIDR: listing.priceIDR,
+      state: "DEPOSITED",
+      currentStateLabel: "DEPOSITED",
+      createdAt: now,
+      updatedAt: now,
+      depositTxHash: depositEvent.txHash,
+      events: [createdEvent, depositEvent],
+      buyerConfirmedReceipt: false,
+      sellerConfirmedDelivery: false,
+    };
+    set((s) => ({ transactions: [tx, ...s.transactions] }));
+    return id;
+  },
+  confirmHold: (txId, seller) => {
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== txId) return t;
+        if (t.state !== "DEPOSITED") return t;
+        const evt = makeEvent(txId, "Held", seller, {
+          seller: t.listing.sellerName,
+        });
+        return {
+          ...t,
+          state: "HELD" as EscrowState,
+          currentStateLabel: "HELD",
+          sellerConfirmedDelivery: true,
+          holdTxHash: evt.txHash,
+          updatedAt: Date.now(),
+          events: [...t.events, evt],
+        };
+      }),
+    }));
+  },
+  confirmReceived: (txId) => {
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== txId) return t;
+        if (t.state !== "HELD") return t;
+        const evt = makeEvent(
+          txId,
+          "Released",
+          t.buyer,
+          { amount: `${t.amountMatic} MATIC`, buyer: t.buyer },
+        );
+        return {
+          ...t,
+          state: "RELEASED" as EscrowState,
+          currentStateLabel: "RELEASED",
+          buyerConfirmedReceipt: true,
+          releaseTxHash: evt.txHash,
+          updatedAt: Date.now(),
+          events: [...t.events, evt],
+        };
+      }),
+    }));
+  },
+  requestRefund: (txId) => {
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== txId) return t;
+        if (t.state !== "HELD") return t;
+        const evt = makeEvent(
+          txId,
+          "RefundRequested",
+          t.buyer,
+          { amount: `${t.amountMatic} MATIC`, reason: "Buyer request refund" },
+        );
+        return {
+          ...t,
+          state: "REFUND_REQUESTED" as EscrowState,
+          currentStateLabel: "REFUND_REQUESTED",
+          updatedAt: Date.now(),
+          events: [...t.events, evt],
+        };
+      }),
+    }));
+  },
+  approveRefund: (txId) => {
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== txId) return t;
+        if (t.state !== "REFUND_REQUESTED") return t;
+        const approvedEvt = makeEvent(
+          txId,
+          "RefundApproved",
+          t.seller,
+          { seller: t.listing.sellerName },
+        );
+        const refundedEvt = makeEvent(
+          txId,
+          "Refunded",
+          t.seller,
+          { amount: `${t.amountMatic} MATIC`, to: t.buyer },
+        );
+        return {
+          ...t,
+          state: "REFUNDED" as EscrowState,
+          currentStateLabel: "REFUNDED",
+          refundTxHash: refundedEvt.txHash,
+          updatedAt: Date.now(),
+          events: [...t.events, approvedEvt, refundedEvt],
+        };
+      }),
+    }));
+  },
+  rejectRefund: (txId) => {
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== txId) return t;
+        if (t.state !== "REFUND_REQUESTED") return t;
+        const evt = makeEvent(
+          txId,
+          "RefundRejected",
+          t.seller,
+          { seller: t.listing.sellerName, reason: "Seller rejected refund" },
+        );
+        return {
+          ...t,
+          state: "HELD" as EscrowState,
+          currentStateLabel: "HELD",
+          updatedAt: Date.now(),
+          events: [...t.events, evt],
+        };
+      }),
+    }));
+  },
+}));
