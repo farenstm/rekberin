@@ -98,6 +98,31 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "newCid",
+        "type": "string"
+      }
+    ],
+    "name": "ListingUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -402,6 +427,29 @@
       }
     ],
     "name": "requestRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_listingId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_newPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_newCid",
+        "type": "string"
+      }
+    ],
+    "name": "updateListing",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
