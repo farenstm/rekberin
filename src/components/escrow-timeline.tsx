@@ -203,7 +203,7 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
   const depositStep: TimelineStep = {
     key: "DEPOSITED",
     label: "Deposit",
-    description: "Pembeli telah mengirimkan pembayaran yang kini diamankan oleh sistem.",
+    description: "Buyer mengirim dana ke smart contract. State: DEPOSITED.",
     icon: Lock,
     completed: !!tx.depositTxHash,
     active: tx.state === "DEPOSITED",
@@ -215,8 +215,8 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
     key: "HELD",
     label: "Hold",
     description: isRefundPath
-      ? "Pembayaran ditahan oleh sistem karena pembeli mengajukan komplain/refund."
-      : "Pembayaran berhasil diamankan oleh sistem, menunggu konfirmasi pembeli.",
+      ? "Dana ditahan smart contract. Buyer request refund."
+      : "Dana ditahan smart contract, menunggu konfirmasi buyer.",
     icon: Shield,
     completed: !!tx.holdTxHash,
     active: tx.state === "HELD",

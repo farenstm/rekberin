@@ -294,7 +294,7 @@ function getStatusNarrative(state: EscrowState): {
       return {
         title: "Waiting buyer confirmation",
         subtitle:
-          "Pembayaran Anda telah diamankan oleh sistem. Seller sudah mengirim informasi akun. Silakan konfirmasi penerimaan untuk meneruskan pembayaran ke seller, atau ajukan pengembalian dana (refund) jika bermasalah.",
+          "Dana di-hold smart contract. Seller sudah kirim akun. Buyer konfirmasi penerimaan untuk release, atau request refund.",
       };
     case "REFUND_REQUESTED":
       return {
@@ -716,7 +716,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
           <Clock className="size-4 text-info shrink-0 mt-0.5" />
           <div className="text-xs text-muted-foreground leading-relaxed">
             Buyer sudah deposit. Menunggu seller konfirmasi bahwa akun siap
-            dikirim. Sistem akan otomatis memproses dan mengamankan dana.
+            dikirim. Smart contract akan otomatis transisi ke state{" "}
+            <span className="font-mono text-warning">HELD</span>.
           </div>
         </div>
       )}
@@ -727,7 +728,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
             <AlertTriangle className="size-4 text-warning shrink-0 mt-0.5" />
             <div className="text-xs text-warning-foreground/90 leading-relaxed">
               Dana <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>{" "}
-              sedang diamankan oleh sistem. Seller sudah mengonfirmasi pengiriman
+              sedang di-hold smart contract. Seller sudah konfirmasi pengiriman
               akun. Buyer: konfirmasi penerimaan untuk release dana, atau request
               refund.
             </div>
