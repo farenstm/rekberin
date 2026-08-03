@@ -1,7 +1,9 @@
 import { ethers } from "ethers";
 import abi from "./abi.json";
 
-export const CONTRACT_ADDRESS = "0xe31BE7F102BEbe58f64FA01fd7aF1f8065c8efde";
+import { CONTRACT_INFO } from "./contract";
+
+export const CONTRACT_ADDRESS = CONTRACT_INFO.address;
 
 export async function getProvider() {
   if (typeof window === "undefined" || !window.ethereum) {
