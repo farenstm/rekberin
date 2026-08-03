@@ -456,6 +456,10 @@ export const useEscrowStore = create<EscrowStore>()(
       
       // Merge listing info into escrows
       const { useListingsStore } = await import("./store");
+      
+      // Force sync listings first so we always have the freshest metadata!
+      await useListingsStore.getState().syncListings();
+      
       const listings = useListingsStore.getState().listings;
       
       const enrichedEscrows = onChainEscrows.map((e: any) => {
