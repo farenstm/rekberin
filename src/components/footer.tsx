@@ -38,19 +38,6 @@ export function Footer() {
           <span className="text-muted-foreground/70">
             Escrow FSM v1.0.0
           </span>
-          <span className="text-muted-foreground/40">•</span>
-          <button
-            onClick={() => {
-              if (window.confirm("Hapus semua data simulasi (Listing & Transaksi)?")) {
-                localStorage.removeItem("escrowchain-listings");
-                localStorage.removeItem("escrowchain-transactions");
-                window.location.reload();
-              }
-            }}
-            className="text-destructive/70 hover:text-destructive transition-colors underline decoration-destructive/30"
-          >
-            Reset Demo Data
-          </button>
         </div>
       </div>
     </footer>
