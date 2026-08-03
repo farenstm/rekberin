@@ -14,11 +14,6 @@ import type {
   WalletStatus,
 } from "./types";
 import {
-  MOCK_LISTINGS,
-  MOCK_TRANSACTIONS,
-  DEFAULT_CURRENT_ESCROW_ID,
-} from "./mock-data";
-import {
   generateTxHash,
   generateBlockNumber,
   generateCID,
