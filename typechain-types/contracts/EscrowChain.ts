@@ -93,6 +93,7 @@ export interface EscrowChainInterface extends Interface {
       | "nextListingId"
       | "rejectRefund"
       | "requestRefund"
+      | "updateListing"
   ): FunctionFragment;
 
   getEvent(
@@ -100,6 +101,7 @@ export interface EscrowChainInterface extends Interface {
       | "EscrowCreated"
       | "EscrowStateChanged"
       | "ListingCreated"
+      | "ListingUpdated"
   ): EventFragment;
 
   encodeFunctionData(
@@ -150,6 +152,10 @@ export interface EscrowChainInterface extends Interface {
     functionFragment: "requestRefund",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "updateListing",
+    values: [BigNumberish, BigNumberish, string]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "approveRefund",
@@ -185,6 +191,10 @@ export interface EscrowChainInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "requestRefund",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateListing",
     data: BytesLike
   ): Result;
 }
@@ -257,6 +267,28 @@ export namespace ListingCreatedEvent {
     seller: string;
     price: bigint;
     cid: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ListingUpdatedEvent {
+  export type InputTuple = [
+    listingId: BigNumberish,
+    newPrice: BigNumberish,
+    newCid: string
+  ];
+  export type OutputTuple = [
+    listingId: bigint,
+    newPrice: bigint,
+    newCid: string
+  ];
+  export interface OutputObject {
+    listingId: bigint;
+    newPrice: bigint;
+    newCid: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -390,6 +422,12 @@ export interface EscrowChain extends BaseContract {
     "nonpayable"
   >;
 
+  updateListing: TypedContractMethod<
+    [_listingId: BigNumberish, _newPrice: BigNumberish, _newCid: string],
+    [void],
+    "nonpayable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -469,6 +507,13 @@ export interface EscrowChain extends BaseContract {
   getFunction(
     nameOrSignature: "requestRefund"
   ): TypedContractMethod<[_escrowId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "updateListing"
+  ): TypedContractMethod<
+    [_listingId: BigNumberish, _newPrice: BigNumberish, _newCid: string],
+    [void],
+    "nonpayable"
+  >;
 
   getEvent(
     key: "EscrowCreated"
@@ -490,6 +535,13 @@ export interface EscrowChain extends BaseContract {
     ListingCreatedEvent.InputTuple,
     ListingCreatedEvent.OutputTuple,
     ListingCreatedEvent.OutputObject
+  >;
+  getEvent(
+    key: "ListingUpdated"
+  ): TypedContractEvent<
+    ListingUpdatedEvent.InputTuple,
+    ListingUpdatedEvent.OutputTuple,
+    ListingUpdatedEvent.OutputObject
   >;
 
   filters: {
@@ -524,6 +576,17 @@ export interface EscrowChain extends BaseContract {
       ListingCreatedEvent.InputTuple,
       ListingCreatedEvent.OutputTuple,
       ListingCreatedEvent.OutputObject
+    >;
+
+    "ListingUpdated(uint256,uint256,string)": TypedContractEvent<
+      ListingUpdatedEvent.InputTuple,
+      ListingUpdatedEvent.OutputTuple,
+      ListingUpdatedEvent.OutputObject
+    >;
+    ListingUpdated: TypedContractEvent<
+      ListingUpdatedEvent.InputTuple,
+      ListingUpdatedEvent.OutputTuple,
+      ListingUpdatedEvent.OutputObject
     >;
   };
 }

@@ -46,6 +46,7 @@ contract EscrowChain is ReentrancyGuard {
     mapping(uint256 => Escrow) public escrows;
 
     event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price, string cid);
+    event ListingUpdated(uint256 indexed listingId, uint256 newPrice, string newCid);
     event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address indexed buyer, address seller, uint256 amount);
     
     /**
@@ -76,6 +77,26 @@ contract EscrowChain is ReentrancyGuard {
         });
 
         emit ListingCreated(listingId, msg.sender, _price, _cid);
+    }
+
+    /**
+     * @dev Updates an existing listing.
+     * @param _listingId The ID of the listing to update.
+     * @param _newPrice The new price of the listing in wei.
+     * @param _newCid The new IPFS content identifier for the listing metadata.
+     */
+    function updateListing(uint256 _listingId, uint256 _newPrice, string memory _newCid) external {
+        Listing storage listing = listings[_listingId];
+        require(listing.id != 0, "Listing not found");
+        require(listing.seller == msg.sender, "Only seller can update listing");
+        require(listing.isActive, "Listing is not active");
+        require(_newPrice > 0, "Price must be greater than 0");
+        require(bytes(_newCid).length > 0, "CID required");
+
+        listing.price = _newPrice;
+        listing.cid = _newCid;
+
+        emit ListingUpdated(_listingId, _newPrice, _newCid);
     }
 
     /**

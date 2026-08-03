@@ -1,314 +1,702 @@
 // =====================================================================
-// EscrowChain — Smart Contract Source (Solidity 0.8.20)
+// EscrowChain — Smart Contract Source (Solidity 0.8.28)
 // =====================================================================
 // Kode ini hanya untuk display di UI / dokumentasi skripsi.
 // Akan dideploy ke Polygon Amoy testnet pada tahap implementasi nyata.
 // =====================================================================
 
 export const ESCROW_SOLIDITY_SOURCE = `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title EscrowChain
- * @dev Smart contract escrow untuk marketplace akun game digital.
- *      Implementasi Finite State Machine (FSM) berikut:
- *
- *        NONE ──deposit──▶ DEPOSITED ──hold──▶ HELD ──release──▶ RELEASED
- *                                                │
- *                                                └──refund──▶ REFUNDED
- *
- *      Seller hanya bisa klaim dana setelah buyer konfirmasi penerimaan akun.
- *      Buyer bisa request refund selama masih dalam state HELD.
- *
- *      Dideploy ke Polygon Amoy Testnet (chainId 80002).
+ * @notice Smart Contract Escrow untuk prototype marketplace akun game.
+ * @dev Mengimplementasikan mekanisme escrow otomatis menggunakan perubahan state transaksi.
  */
-contract EscrowChain {
-    // ---------- Enums ----------
+contract EscrowChain is ReentrancyGuard {
+    /**
+     * @dev Represents the various states of an escrow transaction.
+     */
+    enum EscrowState { HELD, RELEASED, REFUND_REQUESTED, REFUNDED }
 
-    enum State {
-        NONE,        // 0
-        DEPOSITED,   // 1
-        HELD,        // 2
-        RELEASED,    // 3
-        REFUNDED,    // 4
-        DISPUTED     // 5
-    }
-
-    // ---------- Structs ----------
-
+    /**
+     * @dev Structure to store listing details.
+     */
     struct Listing {
         uint256 id;
-        address seller;
-        uint256 priceWei;
-        bytes32 ipfsCid;       // Hash metadata listing
-        State status;          // NONE = available
+        address payable seller;
+        uint256 price;
+        string cid; // IPFS metadata CID
+        bool isActive;
     }
 
+    /**
+     * @dev Structure to store escrow details.
+     */
     struct Escrow {
+        uint256 id;
         uint256 listingId;
-        address buyer;
-        address seller;
+        address payable buyer;
+        address payable seller;
         uint256 amount;
-        State state;
-        bool buyerConfirmed;
-        bool sellerConfirmed;
+        EscrowState state;
         uint256 createdAt;
         uint256 updatedAt;
     }
 
-    // ---------- Storage ----------
-
-    address public owner;
-    uint256 public listingCounter;
-    uint256 public escrowCounter;
+    uint256 public nextListingId = 1;
+    uint256 public nextEscrowId = 1;
 
     mapping(uint256 => Listing) public listings;
     mapping(uint256 => Escrow) public escrows;
 
-    // ---------- Events ----------
-
-    event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price, bytes32 cid);
-    event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address buyer, uint256 amount);
-    event Deposited(uint256 indexed escrowId, address buyer, uint256 amount);
-    event Held(uint256 indexed escrowId, address indexed seller);
-    event Released(uint256 indexed escrowId, address seller, uint256 buyer, uint256 amount);
-    event Refunded(uint256 indexed escrowId, address buyer, uint256 amount);
-    event DisputeOpened(uint256 indexed escrowId, address opener);
-
-    // ---------- Modifiers ----------
-
-    modifier onlyBuyer(uint256 _escrowId) {
-        require(escrows[_escrowId].buyer == msg.sender, "Not buyer");
-        _;
-    }
-
-    modifier onlySeller(uint256 _escrowId) {
-        require(escrows[_escrowId].seller == msg.sender, "Not seller");
-        _;
-    }
-
-    modifier inState(uint256 _escrowId, State _state) {
-        require(escrows[_escrowId].state == _state, "Invalid state");
-        _;
-    }
-
-    // ---------- Constructor ----------
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    // ---------- Listing ----------
-
-    function createListing(uint256 _priceWei, bytes32 _ipfsCid) external returns (uint256) {
-        require(_priceWei > 0, "Price must be > 0");
-
-        listingCounter++;
-        listings[listingCounter] = Listing({
-            id: listingCounter,
-            seller: msg.sender,
-            priceWei: _priceWei,
-            ipfsCid: _ipfsCid,
-            status: State.NONE
-        });
-
-        emit ListingCreated(listingCounter, msg.sender, _priceWei, _ipfsCid);
-        return listingCounter;
-    }
-
-    // ---------- Escrow Flow ----------
+    event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price, string cid);
+    event ListingUpdated(uint256 indexed listingId, uint256 newPrice, string newCid);
+    event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address indexed buyer, address seller, uint256 amount);
+    
+    /**
+     * @dev Emitted when an escrow changes state.
+     */
+    event EscrowStateChanged(
+        uint256 indexed escrowId,
+        EscrowState oldState,
+        EscrowState newState
+    );
 
     /**
-     * @dev Buyer memulai pembelian — deposit dana ke contract.
-     *      State: NONE → DEPOSITED
+     * @dev Creates a new listing for sale.
+     * @param _price The price of the listing in wei.
+     * @param _cid The IPFS content identifier for the listing metadata.
      */
-    function createEscrow(uint256 _listingId) external payable returns (uint256) {
-        Listing storage listing = listings[_listingId];
-        require(listing.seller != msg.sender, "Cannot buy own listing");
-        require(msg.value == listing.priceWei, "Wrong amount");
+    function createListing(uint256 _price, string memory _cid) external {
+        require(_price > 0, "Price must be greater than 0");
+        require(bytes(_cid).length > 0, "CID required");
+        uint256 listingId = nextListingId++;
 
-        escrowCounter++;
-        escrows[escrowCounter] = Escrow({
+        listings[listingId] = Listing({
+            id: listingId,
+            seller: payable(msg.sender),
+            price: _price,
+            cid: _cid,
+            isActive: true
+        });
+
+        emit ListingCreated(listingId, msg.sender, _price, _cid);
+    }
+
+    /**
+     * @dev Updates an existing listing.
+     * @param _listingId The ID of the listing to update.
+     * @param _newPrice The new price of the listing in wei.
+     * @param _newCid The new IPFS content identifier for the listing metadata.
+     */
+    function updateListing(uint256 _listingId, uint256 _newPrice, string memory _newCid) external {
+        Listing storage listing = listings[_listingId];
+        require(listing.id != 0, "Listing not found");
+        require(listing.seller == msg.sender, "Only seller can update listing");
+        require(listing.isActive, "Listing is not active");
+        require(_newPrice > 0, "Price must be greater than 0");
+        require(bytes(_newCid).length > 0, "CID required");
+
+        listing.price = _newPrice;
+        listing.cid = _newCid;
+
+        emit ListingUpdated(_listingId, _newPrice, _newCid);
+    }
+
+    /**
+     * @dev Creates a new escrow by depositing the required funds.
+     * @param _listingId The ID of the listing to purchase.
+     */
+    function createEscrow(uint256 _listingId) external payable {
+        Listing storage listing = listings[_listingId];
+        require(listing.id != 0, "Listing not found");
+        require(listing.isActive, "Listing is not active");
+        require(msg.value == listing.price, "Incorrect MATIC value sent");
+        require(msg.sender != listing.seller, "Seller cannot buy own listing");
+
+        uint256 escrowId = nextEscrowId++;
+        
+        escrows[escrowId] = Escrow({
+            id: escrowId,
             listingId: _listingId,
-            buyer: msg.sender,
+            buyer: payable(msg.sender),
             seller: listing.seller,
             amount: msg.value,
-            state: State.DEPOSITED,
-            buyerConfirmed: false,
-            sellerConfirmed: false,
+            state: EscrowState.HELD,
             createdAt: block.timestamp,
             updatedAt: block.timestamp
         });
 
-        listing.status = State.DEPOSITED;
+        // Deactivate listing so it can't be bought multiple times concurrently
+        listing.isActive = false;
 
-        emit EscrowCreated(escrowCounter, _listingId, msg.sender, msg.value);
-        emit Deposited(escrowCounter, msg.sender, msg.value);
-        return escrowCounter;
+        emit EscrowCreated(escrowId, _listingId, msg.sender, listing.seller, msg.value);
     }
 
     /**
-     * @dev Seller konfirmasi bahwa dia siap mengirim akun.
-     *      State: DEPOSITED → HELD
+     * @dev Confirms receipt of the digital asset and releases funds to the seller.
+     * @param _escrowId The ID of the escrow transaction.
      */
-    function confirmHold(uint256 _escrowId)
-        external
-        onlySeller(_escrowId)
-        inState(_escrowId, State.DEPOSITED)
-    {
-        Escrow storage e = escrows[_escrowId];
-        e.sellerConfirmed = true;
-        e.state = State.HELD;
-        e.updatedAt = block.timestamp;
+    function confirmReceipt(uint256 _escrowId) external nonReentrant {
+        Escrow storage escrow = escrows[_escrowId];
+        require(escrow.buyer == msg.sender, "Only buyer can confirm receipt");
+        require(escrow.state == EscrowState.HELD, "Escrow is not HELD");
 
-        emit Held(_escrowId, msg.sender);
+        EscrowState oldState = escrow.state;
+        escrow.state = EscrowState.RELEASED;
+        escrow.updatedAt = block.timestamp;
+        
+        (bool success, ) = escrow.seller.call{value: escrow.amount}("");
+        require(success, "Transfer failed");
+
+        emit EscrowStateChanged(_escrowId, oldState, EscrowState.RELEASED);
     }
 
     /**
-     * @dev Buyer konfirmasi bahwa akun sudah diterima.
-     *      Dana dilepas ke seller.
-     *      State: HELD → RELEASED
+     * @dev Requests a refund from the seller.
+     * @param _escrowId The ID of the escrow transaction.
      */
-    function confirmReceived(uint256 _escrowId)
-        external
-        onlyBuyer(_escrowId)
-        inState(_escrowId, State.HELD)
-    {
-        Escrow storage e = escrows[_escrowId];
-        e.buyerConfirmed = true;
-        e.state = State.RELEASED;
-        e.updatedAt = block.timestamp;
+    function requestRefund(uint256 _escrowId) external {
+        Escrow storage escrow = escrows[_escrowId];
+        require(escrow.buyer == msg.sender, "Only buyer can request refund");
+        require(escrow.state == EscrowState.HELD, "Escrow is not HELD");
 
-        (bool sent, ) = e.seller.call{value: e.amount}("");
-        require(sent, "Release failed");
+        EscrowState oldState = escrow.state;
+        escrow.state = EscrowState.REFUND_REQUESTED;
+        escrow.updatedAt = block.timestamp;
 
-        emit Released(_escrowId, e.seller, e.buyer, e.amount);
+        emit EscrowStateChanged(_escrowId, oldState, EscrowState.REFUND_REQUESTED);
     }
 
     /**
-     * @dev Buyer request refund selama dalam state HELD.
-     *      Dana dikembalikan ke buyer.
-     *      State: HELD → REFUNDED
+     * @dev Approves a refund request and returns funds to the buyer.
+     * @param _escrowId The ID of the escrow transaction.
      */
-    function requestRefund(uint256 _escrowId)
-        external
-        onlyBuyer(_escrowId)
-        inState(_escrowId, State.HELD)
-    {
-        Escrow storage e = escrows[_escrowId];
-        e.state = State.REFUNDED;
-        e.updatedAt = block.timestamp;
+    function approveRefund(uint256 _escrowId) external nonReentrant {
+        Escrow storage escrow = escrows[_escrowId];
+        require(escrow.seller == msg.sender, "Only seller can approve refund");
+        require(escrow.state == EscrowState.REFUND_REQUESTED, "Refund not requested");
 
-        (bool sent, ) = e.buyer.call{value: e.amount}("");
-        require(sent, "Refund failed");
+        EscrowState oldState = escrow.state;
+        escrow.state = EscrowState.REFUNDED;
+        escrow.updatedAt = block.timestamp;
+        
+        (bool success, ) = escrow.buyer.call{value: escrow.amount}("");
+        require(success, "Transfer failed");
 
-        emit Refunded(_escrowId, e.buyer, e.amount);
+        emit EscrowStateChanged(_escrowId, oldState, EscrowState.REFUNDED);
     }
 
-    // ---------- Views ----------
+    /**
+     * @dev Rejects a refund request from the buyer.
+     * @param _escrowId The ID of the escrow transaction.
+     */
+    function rejectRefund(uint256 _escrowId) external {
+        Escrow storage escrow = escrows[_escrowId];
+        require(escrow.seller == msg.sender, "Only seller can reject refund");
+        require(escrow.state == EscrowState.REFUND_REQUESTED, "Refund not requested");
 
-    function getEscrowState(uint256 _escrowId) external view returns (State) {
-        return escrows[_escrowId].state;
+        EscrowState oldState = escrow.state;
+
+        // Refund request rejected by seller.
+        // Escrow remains in HELD state.
+        // Dispute resolution is outside the scope of this research.
+        escrow.state = EscrowState.HELD;
+        escrow.updatedAt = block.timestamp;
+
+        emit EscrowStateChanged(_escrowId, oldState, EscrowState.HELD);
+    }
+
+    /**
+     * @dev Gets the details of an escrow transaction.
+     * @param _id The ID of the escrow transaction.
+     * @return Escrow struct containing transaction details.
+     */
+    function getEscrow(uint256 _id) external view returns (Escrow memory) {
+        return escrows[_id];
+    }
+
+    /**
+     * @dev Gets the details of a listing.
+     * @param _id The ID of the listing.
+     * @return Listing struct containing listing details.
+     */
+    function getListing(uint256 _id) external view returns (Listing memory) {
+        return listings[_id];
     }
 }
 `;
 
 export const ESCROW_ABI = [
   {
-    name: "createListing",
-    type: "function" as const,
-    inputs: [
-      { name: "_priceWei", type: "uint256" },
-      { name: "_ipfsCid", type: "bytes32" },
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "escrowId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "nonpayable",
+    "name": "EscrowCreated",
+    "type": "event"
   },
   {
-    name: "createEscrow",
-    type: "function" as const,
-    inputs: [{ name: "_listingId", type: "uint256" }],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "payable",
-  },
-  {
-    name: "confirmHold",
-    type: "function" as const,
-    inputs: [{ name: "_escrowId", type: "uint256" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "confirmReceived",
-    type: "function" as const,
-    inputs: [{ name: "_escrowId", type: "uint256" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "requestRefund",
-    type: "function" as const,
-    inputs: [{ name: "_escrowId", type: "uint256" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    name: "ListingCreated",
-    type: "event" as const,
-    inputs: [
-      { name: "listingId", type: "uint256" },
-      { name: "seller", type: "address" },
-      { name: "price", type: "uint256" },
-      { name: "cid", type: "bytes32" },
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "escrowId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum EscrowChain.EscrowState",
+        "name": "oldState",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum EscrowChain.EscrowState",
+        "name": "newState",
+        "type": "uint8"
+      }
     ],
+    "name": "EscrowStateChanged",
+    "type": "event"
   },
   {
-    name: "Deposited",
-    type: "event" as const,
-    inputs: [
-      { name: "escrowId", type: "uint256" },
-      { name: "buyer", type: "address" },
-      { name: "amount", type: "uint256" },
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      }
     ],
+    "name": "ListingCreated",
+    "type": "event"
   },
   {
-    name: "Held",
-    type: "event" as const,
-    inputs: [
-      { name: "escrowId", type: "uint256" },
-      { name: "seller", type: "address" },
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "newCid",
+        "type": "string"
+      }
     ],
+    "name": "ListingUpdated",
+    "type": "event"
   },
   {
-    name: "Released",
-    type: "event" as const,
-    inputs: [
-      { name: "escrowId", type: "uint256" },
-      { name: "seller", type: "address" },
-      { name: "buyer", type: "address" },
-      { name: "amount", type: "uint256" },
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_escrowId",
+        "type": "uint256"
+      }
     ],
+    "name": "approveRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    name: "Refunded",
-    type: "event" as const,
-    inputs: [
-      { name: "escrowId", type: "uint256" },
-      { name: "buyer", type: "address" },
-      { name: "amount", type: "uint256" },
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_escrowId",
+        "type": "uint256"
+      }
     ],
+    "name": "confirmReceipt",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
-];
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_listingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "createEscrow",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_cid",
+        "type": "string"
+      }
+    ],
+    "name": "createListing",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "escrows",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address payable",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum EscrowChain.EscrowState",
+        "name": "state",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "createdAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getEscrow",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "listingId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address payable",
+            "name": "buyer",
+            "type": "address"
+          },
+          {
+            "internalType": "address payable",
+            "name": "seller",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum EscrowChain.EscrowState",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "createdAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "updatedAt",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct EscrowChain.Escrow",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getListing",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address payable",
+            "name": "seller",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "cid",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "isActive",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct EscrowChain.Listing",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "listings",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address payable",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "isActive",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextEscrowId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextListingId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_escrowId",
+        "type": "uint256"
+      }
+    ],
+    "name": "rejectRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_escrowId",
+        "type": "uint256"
+      }
+    ],
+    "name": "requestRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_listingId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_newPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_newCid",
+        "type": "string"
+      }
+    ],
+    "name": "updateListing",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
 
 export const CONTRACT_INFO = {
   name: "EscrowChain",
-  address: "0xe31BE7F102BEbe58f64FA01fd7aF1f8065c8efde",
+  address: "0xA6032Ce75eE62201173Ff5C48cf9563F6cd6A4a5",
   network: "Polygon Amoy Testnet",
   chainId: "0x13882",
   chainIdDecimal: 80002,
-  deployBlock: 6_482_517,
+  deployBlock: 6482517,
   explorerUrl: "https://www.oklink.com/amoy",
-  rpcUrl: "https://rpc-amoy.polygon.technology",
+  rpcUrl: "https://polygon-amoy-bor-rpc.publicnode.com",
   sourceCode: ESCROW_SOLIDITY_SOURCE,
   abi: ESCROW_ABI,
 };

@@ -110,6 +110,7 @@ interface AppStore {
   view: ViewId;
   transactionsTab: TransactionsTab;
   selectedListingId: string | null;
+  editListingId: string | null;
   selectedTransactionId: string | null;
   metamaskModal: {
     open: boolean;
@@ -124,6 +125,7 @@ interface AppStore {
   setView: (v: ViewId) => void;
   setTransactionsTab: (t: TransactionsTab) => void;
   openListing: (id: string) => void;
+  openEditListing: (id: string) => void;
   openTransaction: (id: string) => void;
   openMetaMask: (cfg: {
     title: string;
@@ -143,6 +145,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   view: "home",
   transactionsTab: "active",
   selectedListingId: null,
+  editListingId: null,
   selectedTransactionId: null,
   metamaskModal: {
     open: false,
@@ -156,6 +159,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setTransactionsTab: (t) => set({ transactionsTab: t }),
   openListing: (id) =>
     set({ selectedListingId: id, view: "listing-detail" }),
+  openEditListing: (id) =>
+    set({ editListingId: id, view: "edit-listing" }),
   openTransaction: (id) =>
     set({
       selectedTransactionId: id,
@@ -200,6 +205,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 interface ListingsStore {
   listings: Listing[];
   createListing: (data: Omit<Listing, "id" | "status" | "createdAt">, onChainId: number) => string;
+  updateListingDetails: (id: string, updates: Partial<Listing>) => void;
   getById: (id: string) => Listing | undefined;
   updateListingStatus: (id: string, status: "AVAILABLE" | "LOCKED" | "SOLD") => void;
 }
@@ -219,6 +225,13 @@ export const useListingsStore = create<ListingsStore>()(
         };
         set((s) => ({ listings: [newListing, ...s.listings] }));
         return id;
+      },
+      updateListingDetails: (id, updates) => {
+        set((s) => ({
+          listings: s.listings.map((l) =>
+            l.id === id ? { ...l, ...updates } : l
+          ),
+        }));
       },
       getById: (id) => get().listings.find((l) => l.id === id),
       updateListingStatus: (id, status) => {

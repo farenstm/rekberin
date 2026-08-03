@@ -76,6 +76,14 @@ export async function createListingOnChain(priceMatic: number, cid: string) {
   return { receipt, listingId };
 }
 
+export async function updateListingOnChain(listingId: number, priceMatic: number, cid: string) {
+  const contract = await getContract();
+  const priceWei = ethers.parseEther(priceMatic.toString());
+  const tx = await contract.updateListing(listingId, priceWei, cid);
+  const receipt = await tx.wait();
+  return receipt;
+}
+
 export async function createEscrowOnChain(listingId: number, priceMatic: number) {
   const contract = await getContract();
   const priceWei = ethers.parseEther(priceMatic.toString());

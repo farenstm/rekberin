@@ -210,6 +210,16 @@ export function ListingDetailView() {
                 )}
               </button>
 
+              {/* Edit button */}
+              {listing.status === "AVAILABLE" && wallet.status === "connected" && wallet.address.toLowerCase() === listing.seller.toLowerCase() && (
+                <button
+                  onClick={() => useAppStore.getState().openEditListing(listing.id)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-12 rounded-lg font-semibold transition-all border border-border"
+                >
+                  Edit Listing
+                </button>
+              )}
+
               {/* Escrow info */}
               <div className="mt-3 p-3 rounded-lg bg-muted/20 border border-border/50 flex items-start gap-2.5">
                 <Shield className="size-4 text-primary shrink-0 mt-0.5" />

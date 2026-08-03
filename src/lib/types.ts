@@ -112,6 +112,7 @@ export type ViewId =
   | "marketplace"
   | "listing-detail"
   | "create-listing"
+  | "edit-listing"
   | "transactions"
   | "how-it-works"
   | "about";

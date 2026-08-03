@@ -8,6 +8,7 @@ import { HomeView } from "@/components/views/home-view";
 import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ListingDetailView } from "@/components/views/listing-detail-view";
 import { CreateListingView } from "@/components/views/create-listing-view";
+import { EditListingView } from "@/components/views/edit-listing-view";
 import { TransactionsView } from "@/components/views/transactions-view";
 import { HowItWorksView } from "@/components/views/how-it-works-view";
 import { AboutView } from "@/components/views/about-view";
@@ -35,6 +36,8 @@ function renderView(view: ReturnType<typeof useAppStore.getState>["view"]) {
       return <ListingDetailView />;
     case "create-listing":
       return <CreateListingView />;
+    case "edit-listing":
+      return <EditListingView />;
     case "transactions":
       return <TransactionsView />;
     case "how-it-works":
