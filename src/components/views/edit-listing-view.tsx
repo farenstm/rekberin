@@ -53,8 +53,8 @@ export function EditListingView() {
       setDiscord(listing.discord || "");
       setTelegram(listing.telegram || "");
       setImagePreview(listing.imageUrl || "");
+    }
   }, [listing]);
-
   if (!listing) {
     return (
       <div className="p-8 text-center text-muted-foreground">
