@@ -13,15 +13,11 @@ function get(url) {
 async function test() {
   const html = await get('https://rekberin-jade.vercel.app');
   const jsFiles = [...html.matchAll(/src="([^"]+\.js)"/g)].map(m => m[1]);
-  console.log('Found JS files:', jsFiles);
   for (const js of jsFiles) {
     const url = js.startsWith('http') ? js : 'https://rekberin-jade.vercel.app' + (js.startsWith('/') ? '' : '/') + js;
     const content = await get(url);
-    if (content.includes('A6032Ce75eE62201173Ff5C48cf9563F6cd6A4a5')) {
-       console.log('FOUND NEW ADDRESS IN:', js);
-    }
-    if (content.includes('e31BE7F102BEbe58f64FA01fd7aF1f8065c8efde')) {
-       console.log('FOUND OLD ADDRESS IN:', js);
+    if (content.includes('45aB3cD2e1F40a5B6c7D8e9F0a1B2c3D4e5F6a78')) {
+       console.log('FOUND MOCK WALLET IN:', js);
     }
   }
 }

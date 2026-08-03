@@ -21,14 +21,14 @@ export function WalletButton() {
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  if (wallet.status === "disconnected") {
+  if (wallet.status === "disconnected" || wallet.status === "error") {
     return (
       <button
         onClick={connect}
         className="group flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all text-sm font-medium"
       >
         <Wallet className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-        <span>Connect Wallet</span>
+        <span>{wallet.status === "error" ? "Connection Failed - Retry" : "Connect Wallet"}</span>
       </button>
     );
   }
