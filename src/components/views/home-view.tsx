@@ -393,7 +393,7 @@ function CurrentEscrowPreview({
           )}
         >
           {listingImageUrl ? (
-            <img src={listingImageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} alt="preview" className="w-full h-full object-cover" />
+            <img src={listingImageUrl.replace("ipfs://", "https://ipfs.io/ipfs/")} alt="preview" className="w-full h-full object-cover" />
           ) : (
             <span className="text-muted-foreground text-[10px]">No img</span>
           )}

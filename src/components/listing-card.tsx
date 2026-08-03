@@ -30,7 +30,7 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
         )}
       >
         {listing.imageUrl ? (
-          <img src={listing.imageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} alt="preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={listing.imageUrl.replace("ipfs://", "https://ipfs.io/ipfs/")} alt="preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="absolute inset-0 bg-grid opacity-30" />
         )}
