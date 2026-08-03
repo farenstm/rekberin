@@ -153,7 +153,6 @@ export async function fetchAllListingsFromChain() {
   for (let i = 1; i <= count; i++) {
     try {
       const l = await contract.getListing(i);
-      if (!l.isActive) continue;
       
       let metadata: any = {};
       try {
