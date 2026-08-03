@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
-import abi from "./abi.json";
-
 import { CONTRACT_INFO } from "./contract";
+const abi = CONTRACT_INFO.abi;
 
 export const CONTRACT_ADDRESS = CONTRACT_INFO.address;
 
