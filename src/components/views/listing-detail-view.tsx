@@ -112,7 +112,7 @@ export function ListingDetailView() {
               className={`relative aspect-[4/3] rounded-xl bg-muted/20 overflow-hidden border border-border card-elevated`}
             >
               {listing.imageUrl ? (
-                <img src={listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} alt="preview" className="w-full h-full object-cover" />
+                <img src={listing.imageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} alt="preview" className="w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80 from-indigo-500/20 to-purple-500/20">
                   <span className="text-6xl drop-shadow-md">🎮</span>

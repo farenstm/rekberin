@@ -159,8 +159,23 @@ export async function fetchAllListingsFromChain() {
       let metadata: any = {};
       try {
         const cid = l.cid.replace("ipfs://", "");
-        const res = await fetch(`https://cloudflare-ipfs.com/ipfs/${cid}`);
-        metadata = await res.json();
+        const gateways = [
+          `https://gateway.pinata.cloud/ipfs/${cid}`,
+          `https://ipfs.io/ipfs/${cid}`,
+          `https://cloudflare-ipfs.com/ipfs/${cid}`
+        ];
+        
+        for (const url of gateways) {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              metadata = await res.json();
+              break;
+            }
+          } catch (err) {
+            // ignore and try next
+          }
+        }
       } catch (e) {
         console.warn("Failed to fetch metadata for listing", i, e);
       }
