@@ -22,6 +22,7 @@ import {
 import { useAppStore, useEscrowStore, useWalletStore } from "@/lib/store";
 import { StateBadge } from "@/components/state-badge";
 import { EscrowTimeline } from "@/components/escrow-timeline";
+import { IPFSImage } from "@/components/ipfs-image";
 import {
   formatIDR,
   formatMATIC,
@@ -225,18 +226,22 @@ export function EscrowDashboardView() {
             {/* Listing reference */}
             <div className="rounded-xl border border-border bg-card p-4">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3">
-                Listing Reference
+                Detail Akun
               </div>
               <div className="flex items-start gap-3">
-                <div className="size-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl border border-border shrink-0 from-indigo-500/20 to-purple-500/20">
-                  🎮
+                <div className="relative size-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl border border-border shrink-0 from-indigo-500/20 to-purple-500/20 overflow-hidden">
+                  {tx.listing.imageUrl ? (
+                    <IPFSImage src={tx.listing.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>🎮</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm line-clamp-1">
                     {tx.listing.title}
                   </div>
                   <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
-                    {tx.listing.id} • {tx.listing.game}
+                    {tx.listing.game}
                   </div>
                   <button
                     onClick={() => useAppStore.getState().openListing(tx.listing.id)}
