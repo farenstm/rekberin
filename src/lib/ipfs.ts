@@ -3,9 +3,18 @@ export async function uploadFileToIPFS(file: File): Promise<string> {
   const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
 
   if (!apiKey || !apiSecret) {
-    console.warn("No Pinata API keys found. Mocking IPFS file upload.");
+    console.warn("No Pinata API keys found. Mocking IPFS file upload with base64.");
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    return typeof window !== "undefined" ? URL.createObjectURL(file) : `QmMockFileCid${Date.now()}`;
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") {
+        resolve(`QmMockFileCid${Date.now()}`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
