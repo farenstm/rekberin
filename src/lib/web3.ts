@@ -214,7 +214,7 @@ export async function fetchAllEscrowsFromChain() {
   const count = Number(nextId) - 1;
   const escrows: any[] = [];
   
-  const STATE_MAP = ["NONE", "DEPOSITED", "HELD", "RELEASED", "REFUNDED", "DISPUTED", "REFUND_REQUESTED"];
+  const STATE_MAP = ["HELD", "RELEASED", "REFUND_REQUESTED", "REFUNDED"];
   
   for (let i = 1; i <= count; i++) {
     try {
