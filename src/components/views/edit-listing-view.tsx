@@ -52,7 +52,7 @@ export function EditListingView() {
       setDiscord(listing.discord || "");
       setTelegram(listing.telegram || "");
       setWhatsapp(listing.whatsapp || "");
-      setImagePreview(listing.imageUrl ? listing.imageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/") : "");
+      setImagePreview(listing.imageUrl ? listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/") : "");
     }
   }, [listing]);
 

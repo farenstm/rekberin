@@ -393,7 +393,7 @@ function CurrentEscrowPreview({
           )}
         >
           {listingImageUrl ? (
-            <img src={listingImageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} alt="preview" className="w-full h-full object-cover" />
+            <img src={listingImageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} alt="preview" className="w-full h-full object-cover" />
           ) : (
             <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80", activeEscrow?.listing.imageColor)}>
               <span className="text-4xl drop-shadow-md">{activeEscrow?.listing.imageEmoji}</span>

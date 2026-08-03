@@ -120,7 +120,7 @@ export function HistoryView() {
                     >
                       {tx.listing.imageUrl ? (
                         <img 
-                          src={tx.listing.imageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} 
+                          src={tx.listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} 
                           alt="Thumb" 
                           className="w-full h-full object-cover rounded-lg"
                         />
