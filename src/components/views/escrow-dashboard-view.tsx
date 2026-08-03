@@ -342,8 +342,8 @@ function SellerContactsCard({ listing }: { listing: Listing }) {
         </span>
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
-        Serah terima akun dilakukan off-chain. Hubungi seller via channel
-        berikut setelah escrow masuk state <span className="font-mono text-warning">HELD</span>.
+        Serah terima akun dilakukan secara personal. Hubungi seller melalui kontak
+        berikut setelah pembayaran diamankan oleh sistem.
       </p>
       <div className="space-y-2">
         {listing.discord && (
