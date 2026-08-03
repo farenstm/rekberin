@@ -38,8 +38,11 @@ export async function uploadMetadataToIPFS(metadata: any): Promise<string> {
   const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
 
   if (!apiKey || !apiSecret) {
-    console.warn("No Pinata API keys found. Mocking IPFS metadata upload.");
+    console.warn("No Pinata API keys found. Saving metadata as base64 data URI.");
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (typeof window !== "undefined") {
+      return `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(metadata))))}`;
+    }
     return `QmMockMetadataCid${Date.now()}`;
   }
 

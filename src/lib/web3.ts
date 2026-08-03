@@ -156,26 +156,34 @@ export async function fetchAllListingsFromChain() {
       
       let metadata: any = {};
       try {
-        const cid = l.cid.replace("ipfs://", "");
-        const gateways = [
-          `https://gateway.pinata.cloud/ipfs/${cid}`,
-          `https://ipfs.io/ipfs/${cid}`,
-          `https://cloudflare-ipfs.com/ipfs/${cid}`
-        ];
+        let cid = l.cid.replace("ipfs://", "");
         
-        for (const url of gateways) {
-          try {
-            const res = await fetch(url);
-            if (res.ok) {
-              metadata = await res.json();
-              break;
+        if (cid.startsWith("data:application/json;base64,")) {
+          // Parse base64 directly from the string
+          const base64Data = cid.replace("data:application/json;base64,", "");
+          metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
+        } else {
+          // Fetch from gateways
+          const gateways = [
+            `https://gateway.pinata.cloud/ipfs/${cid}`,
+            `https://ipfs.io/ipfs/${cid}`,
+            `https://cloudflare-ipfs.com/ipfs/${cid}`
+          ];
+          
+          for (const url of gateways) {
+            try {
+              const res = await fetch(url);
+              if (res.ok) {
+                metadata = await res.json();
+                break;
+              }
+            } catch (err) {
+              // ignore and try next
             }
-          } catch (err) {
-            // ignore and try next
           }
         }
       } catch (e) {
-        console.warn("Failed to fetch metadata for listing", i, e);
+        console.warn("Failed to fetch/parse metadata for listing", i, e);
       }
       
       const priceMatic = Number(ethers.formatEther(l.price));
