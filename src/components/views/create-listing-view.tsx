@@ -166,7 +166,7 @@ export function CreateListingView() {
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
-                placeholder="Mythic Glory"
+                placeholder=""
                 className="input"
               />
             </Field>
@@ -177,7 +177,7 @@ export function CreateListingView() {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Mythic Glory Account — 100+ Hero"
+              placeholder=""
               className="input"
             />
           </Field>

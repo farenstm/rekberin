@@ -302,7 +302,7 @@ export const ESCROW_ABI = [
 
 export const CONTRACT_INFO = {
   name: "EscrowChain",
-  address: "0x7e8A6F113683D71D391413d32BEDf23F59EA1749",
+  address: "0xe31BE7F102BEbe58f64FA01fd7aF1f8065c8efde",
   network: "Polygon Amoy Testnet",
   chainId: "0x13882",
   chainIdDecimal: 80002,
