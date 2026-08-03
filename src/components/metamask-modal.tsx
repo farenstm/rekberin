@@ -112,7 +112,7 @@ export function MetaMaskModal() {
               </button>
             </div>
             <p className="text-[10px] text-muted-foreground/60 text-center">
-              Smart contract RekberIn akan memproses transaksi on-chain.
+              Sistem otomatis RekberIn akan memproses transaksi ini dengan aman.
             </p>
           </div>
         )}
@@ -160,7 +160,7 @@ export function MetaMaskModal() {
             <div>
               <h3 className="font-semibold text-base">Transaction confirmed</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                State escrow telah berubah di smart contract.
+                Status transaksi berhasil diperbarui dan tersimpan di sistem.
               </p>
             </div>
             <div className="rounded-lg border border-success/20 bg-success/5 p-3 text-left space-y-2">

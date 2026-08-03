@@ -80,12 +80,12 @@ export function EditListingView() {
     try {
       let imageUrl = listing.imageUrl || "";
       if (imageFile) {
-        setPublishStep("Uploading new cover image ke IPFS...");
+        setPublishStep("Menyimpan gambar sampul baru...");
         const imageCid = await uploadFileToIPFS(imageFile);
         imageUrl = imageCid.startsWith("blob:") ? imageCid : `ipfs://${imageCid}`;
       }
 
-      setPublishStep("Uploading metadata baru ke IPFS...");
+      setPublishStep("Menyimpan detail akun yang baru...");
       const featuresArr = features
         .split(",")
         .map((s) => s.trim())
@@ -104,7 +104,7 @@ export function EditListingView() {
       };
       const metaCid = await uploadMetadataToIPFS(metadata);
 
-      setPublishStep("Memperbarui data di smart contract...");
+      setPublishStep("Memperbarui data ke sistem keamanan...");
       // Ambil angka id dari "L-001" -> 1
       const onChainId = parseInt(listing.id.replace(/\D/g, ""), 10);
       await updateListingOnChain(onChainId, Number(priceMatic.toFixed(4)), metaCid);
@@ -158,7 +158,7 @@ export function EditListingView() {
             Update Listing Details
           </h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Perubahan metadata akan di-upload ulang ke IPFS sebagai entitas baru, dan data di smart contract akan diperbarui.
+            Perubahan data akan disimpan ulang dengan aman ke sistem keamanan tanpa bisa dimanipulasi.
           </p>
         </div>
 
@@ -329,7 +329,7 @@ export function EditListingView() {
           <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
-              <span>Update metadata → IPFS → Smart Contract.</span>
+              <span>Menyimpan gambar & data ke sistem keamanan.</span>
             </div>
             <button
               onClick={handlePublish}

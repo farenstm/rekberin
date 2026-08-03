@@ -55,11 +55,11 @@ export function CreateListingView() {
     setPublishing(true);
 
     try {
-      setPublishStep("Uploading cover image ke IPFS...");
+      setPublishStep("Menyimpan gambar sampul...");
       const imageCid = await uploadFileToIPFS(imageFile);
       const imageUrl = imageCid.startsWith("blob:") ? imageCid : `ipfs://${imageCid}`;
 
-      setPublishStep("Uploading metadata ke IPFS...");
+      setPublishStep("Menyimpan detail akun...");
       const featuresArr = features
         .split(",")
         .map((s) => s.trim())
@@ -78,7 +78,7 @@ export function CreateListingView() {
       };
       const metaCid = await uploadMetadataToIPFS(metadata);
 
-      setPublishStep("Mendaftarkan listing di smart contract...");
+      setPublishStep("Mendaftarkan produk ke sistem keamanan...");
       const { listingId } = await createListingOnChain(Number(priceMatic.toFixed(4)), metaCid);
 
       const id = createListing({
@@ -132,8 +132,8 @@ export function CreateListingView() {
             Publish new listing
           </h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Cover image & metadata di-upload ke IPFS, lalu listing didaftarkan
-            di smart contract. Buyer bisa mulai escrow segera setelah publish.
+            Gambar dan detail akun disimpan di penyimpanan aman terdesentralisasi, lalu listing didaftarkan
+            secara resmi. Pembeli bisa langsung memulai transaksi dengan aman.
           </p>
         </div>
 
@@ -300,7 +300,7 @@ export function CreateListingView() {
           <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
-              <span>Image & metadata → IPFS → Smart Contract.</span>
+              <span>Menyimpan gambar & data ke sistem keamanan.</span>
             </div>
             <button
               onClick={handlePublish}
