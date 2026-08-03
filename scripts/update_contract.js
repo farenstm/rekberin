@@ -1,7 +1,7 @@
 const fs = require('fs');
 const source = fs.readFileSync('contracts/EscrowChain.sol', 'utf8');
 const artifact = JSON.parse(fs.readFileSync('artifacts/contracts/EscrowChain.sol/EscrowChain.json', 'utf8'));
-const address = '0xA6032Ce75eE62201173Ff5C48cf9563F6cd6A4a5';
+const address = '0x1eCB0A2Ad4495a1B050B519b6ACe92B1e068Bf92';
 
 const content = `// =====================================================================
 // EscrowChain — Smart Contract Source (Solidity 0.8.28)

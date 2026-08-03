@@ -6,7 +6,7 @@
 // =====================================================================
 
 /** Status dari sebuah listing di marketplace */
-export type ListingStatus = "AVAILABLE" | "LOCKED" | "SOLD";
+export type ListingStatus = "AVAILABLE" | "LOCKED" | "SOLD" | "CANCELLED";
 
 /**
  * State mesin escrow (FSM).
@@ -147,4 +147,12 @@ export interface ContractInfo {
     stateMutability?: string;
   }>;
   sourceCode: string;
+}
+
+export interface ListingStore {
+  createListing: (data: Omit<Listing, "id" | "status" | "createdAt">, onChainId: number) => string;
+  updateListingDetails: (id: string, updates: Partial<Listing>) => void;
+  getById: (id: string) => Listing | undefined;
+  updateListingStatus: (id: string, status: "AVAILABLE" | "LOCKED" | "SOLD" | "CANCELLED") => void;
+  syncListings: () => Promise<void>;
 }

@@ -54,6 +54,7 @@ contract EscrowChain is ReentrancyGuard {
 
     event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price, string cid);
     event ListingUpdated(uint256 indexed listingId, uint256 newPrice, string newCid);
+    event ListingCancelled(uint256 indexed listingId);
     event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address indexed buyer, address seller, uint256 amount);
     
     /**
@@ -104,6 +105,20 @@ contract EscrowChain is ReentrancyGuard {
         listing.cid = _newCid;
 
         emit ListingUpdated(_listingId, _newPrice, _newCid);
+    }
+
+    /**
+     * @dev Cancels an active listing.
+     * @param _listingId The ID of the listing to cancel.
+     */
+    function cancelListing(uint256 _listingId) external {
+        Listing storage listing = listings[_listingId];
+        require(listing.id != 0, "Listing not found");
+        require(listing.seller == msg.sender, "Only seller can cancel listing");
+        require(listing.isActive, "Listing is not active or already in escrow");
+
+        listing.isActive = false;
+        emit ListingCancelled(_listingId);
     }
 
     /**
@@ -306,6 +321,19 @@ export const ESCROW_ABI = [
         "internalType": "uint256",
         "name": "listingId",
         "type": "uint256"
+      }
+    ],
+    "name": "ListingCancelled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "listingId",
+        "type": "uint256"
       },
       {
         "indexed": true,
@@ -363,6 +391,19 @@ export const ESCROW_ABI = [
       }
     ],
     "name": "approveRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_listingId",
+        "type": "uint256"
+      }
+    ],
+    "name": "cancelListing",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -690,7 +731,7 @@ export const ESCROW_ABI = [
 
 export const CONTRACT_INFO = {
   name: "EscrowChain",
-  address: "0xA6032Ce75eE62201173Ff5C48cf9563F6cd6A4a5",
+  address: "0x1eCB0A2Ad4495a1B050B519b6ACe92B1e068Bf92",
   network: "Polygon Amoy Testnet",
   chainId: "0x13882",
   chainIdDecimal: 80002,

@@ -90,6 +90,13 @@ const LISTING_STATUS_CONFIG: Record<
     bg: "bg-muted/30",
     border: "border-border",
   },
+  CANCELLED: {
+    label: "CANCELLED",
+    dot: "bg-destructive",
+    text: "text-destructive",
+    bg: "bg-destructive/10",
+    border: "border-destructive/30",
+  },
 };
 
 export function StateBadge({

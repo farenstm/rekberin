@@ -47,6 +47,7 @@ contract EscrowChain is ReentrancyGuard {
 
     event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 price, string cid);
     event ListingUpdated(uint256 indexed listingId, uint256 newPrice, string newCid);
+    event ListingCancelled(uint256 indexed listingId);
     event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address indexed buyer, address seller, uint256 amount);
     
     /**
@@ -97,6 +98,20 @@ contract EscrowChain is ReentrancyGuard {
         listing.cid = _newCid;
 
         emit ListingUpdated(_listingId, _newPrice, _newCid);
+    }
+
+    /**
+     * @dev Cancels an active listing.
+     * @param _listingId The ID of the listing to cancel.
+     */
+    function cancelListing(uint256 _listingId) external {
+        Listing storage listing = listings[_listingId];
+        require(listing.id != 0, "Listing not found");
+        require(listing.seller == msg.sender, "Only seller can cancel listing");
+        require(listing.isActive, "Listing is not active or already in escrow");
+
+        listing.isActive = false;
+        emit ListingCancelled(_listingId);
     }
 
     /**

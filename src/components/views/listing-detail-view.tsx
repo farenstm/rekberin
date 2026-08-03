@@ -48,6 +48,7 @@ export function ListingDetailView() {
   }
 
   const [isBuying, setIsBuying] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const handleBuy = async () => {
     if (wallet.status !== "connected") {
@@ -66,6 +67,27 @@ export function ListingDetailView() {
       alert("Transaksi dibatalkan atau gagal: " + err.message);
     } finally {
       setIsBuying(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!confirm("Yakin ingin membatalkan listing ini?")) return;
+    try {
+      setIsCancelling(true);
+      const { cancelListingOnChain } = await import("@/lib/web3");
+      const numId = parseInt(listing.id.replace(/\D/g, ""), 10);
+      await cancelListingOnChain(numId);
+      
+      const updateStatus = useListingsStore.getState().updateListingStatus;
+      updateStatus(listing.id, "CANCELLED");
+      
+      alert("Listing berhasil dibatalkan!");
+      setView("marketplace");
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal membatalkan listing: " + err.message);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -219,6 +241,17 @@ export function ListingDetailView() {
                   className="w-full mt-2 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-12 rounded-lg font-semibold transition-all border border-border"
                 >
                   Edit Listing
+                </button>
+              )}
+
+              {/* Cancel button */}
+              {listing.status === "AVAILABLE" && wallet.status === "connected" && wallet.address.toLowerCase() === listing.seller.toLowerCase() && (
+                <button
+                  onClick={handleCancel}
+                  disabled={isCancelling}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 h-12 rounded-lg font-semibold transition-all border border-destructive/20 disabled:opacity-50"
+                >
+                  {isCancelling ? "Membatalkan..." : "Batalkan Listing"}
                 </button>
               )}
 

@@ -82,6 +82,7 @@ export interface EscrowChainInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "approveRefund"
+      | "cancelListing"
       | "confirmReceipt"
       | "createEscrow"
       | "createListing"
@@ -100,12 +101,17 @@ export interface EscrowChainInterface extends Interface {
     nameOrSignatureOrTopic:
       | "EscrowCreated"
       | "EscrowStateChanged"
+      | "ListingCancelled"
       | "ListingCreated"
       | "ListingUpdated"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "approveRefund",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "cancelListing",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -159,6 +165,10 @@ export interface EscrowChainInterface extends Interface {
 
   decodeFunctionResult(
     functionFragment: "approveRefund",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "cancelListing",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -242,6 +252,18 @@ export namespace EscrowStateChangedEvent {
     escrowId: bigint;
     oldState: bigint;
     newState: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ListingCancelledEvent {
+  export type InputTuple = [listingId: BigNumberish];
+  export type OutputTuple = [listingId: bigint];
+  export interface OutputObject {
+    listingId: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -345,6 +367,12 @@ export interface EscrowChain extends BaseContract {
     "nonpayable"
   >;
 
+  cancelListing: TypedContractMethod<
+    [_listingId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   confirmReceipt: TypedContractMethod<
     [_escrowId: BigNumberish],
     [void],
@@ -435,6 +463,9 @@ export interface EscrowChain extends BaseContract {
   getFunction(
     nameOrSignature: "approveRefund"
   ): TypedContractMethod<[_escrowId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "cancelListing"
+  ): TypedContractMethod<[_listingId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "confirmReceipt"
   ): TypedContractMethod<[_escrowId: BigNumberish], [void], "nonpayable">;
@@ -530,6 +561,13 @@ export interface EscrowChain extends BaseContract {
     EscrowStateChangedEvent.OutputObject
   >;
   getEvent(
+    key: "ListingCancelled"
+  ): TypedContractEvent<
+    ListingCancelledEvent.InputTuple,
+    ListingCancelledEvent.OutputTuple,
+    ListingCancelledEvent.OutputObject
+  >;
+  getEvent(
     key: "ListingCreated"
   ): TypedContractEvent<
     ListingCreatedEvent.InputTuple,
@@ -565,6 +603,17 @@ export interface EscrowChain extends BaseContract {
       EscrowStateChangedEvent.InputTuple,
       EscrowStateChangedEvent.OutputTuple,
       EscrowStateChangedEvent.OutputObject
+    >;
+
+    "ListingCancelled(uint256)": TypedContractEvent<
+      ListingCancelledEvent.InputTuple,
+      ListingCancelledEvent.OutputTuple,
+      ListingCancelledEvent.OutputObject
+    >;
+    ListingCancelled: TypedContractEvent<
+      ListingCancelledEvent.InputTuple,
+      ListingCancelledEvent.OutputTuple,
+      ListingCancelledEvent.OutputObject
     >;
 
     "ListingCreated(uint256,address,uint256,string)": TypedContractEvent<

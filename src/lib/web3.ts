@@ -86,6 +86,13 @@ export async function updateListingOnChain(listingId: number, priceMatic: number
   return receipt;
 }
 
+export async function cancelListingOnChain(listingId: number) {
+  const contract = await getContract();
+  const tx = await contract.cancelListing(listingId);
+  const receipt = await tx.wait();
+  return receipt;
+}
+
 export async function createEscrowOnChain(listingId: number, priceMatic: number) {
   const contract = await getContract();
   const priceWei = ethers.parseEther(priceMatic.toString());
