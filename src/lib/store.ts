@@ -323,7 +323,6 @@ export const useEscrowStore = create<EscrowStore>()(
       seller: listing.seller,
       amountMatic: listing.priceMatic,
       amountIDR: listing.priceIDR,
-      imageUrl: listing.imageUrl,
       state: "HELD",
       currentStateLabel: "HELD",
       createdAt: now,

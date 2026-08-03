@@ -141,7 +141,7 @@ export interface ContractInfo {
   deployBlock: number;
   abi: Array<{
     name: string;
-    type: "function" | "event";
+    type: "function" | "event" | "error";
     inputs: Array<{ name: string; type: string }>;
     outputs?: Array<{ name: string; type: string }>;
     stateMutability?: string;

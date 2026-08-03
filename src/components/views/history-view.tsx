@@ -112,12 +112,7 @@ export function HistoryView() {
                 <div className="flex items-start justify-between gap-4">
                   {/* Left: ID + listing */}
                   <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div
-                      className={cn(
-                        "size-11 rounded-lg bg-gradient-to-br flex items-center justify-center text-xl border border-border shrink-0",
-                        tx.listing.imageColor,
-                      )}
-                    >
+                    <div className="relative size-11 rounded-lg border border-border shrink-0">
                       {tx.listing.imageUrl ? (
                         <img 
                           src={tx.listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} 
@@ -125,7 +120,7 @@ export function HistoryView() {
                           className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
-                        tx.listing.imageEmoji || "🎮"
+                        <span className="text-2xl pt-2 pl-2 block">🎮</span>
                       )}
                     </div>
                     <div className="min-w-0 flex-1">

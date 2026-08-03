@@ -228,13 +228,8 @@ export function EscrowDashboardView() {
                 Listing Reference
               </div>
               <div className="flex items-start gap-3">
-                <div
-                  className={cn(
-                    "size-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl border border-border shrink-0",
-                    tx.listing.imageColor,
-                  )}
-                >
-                  {tx.listing.imageEmoji}
+                <div className="size-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl border border-border shrink-0 from-indigo-500/20 to-purple-500/20">
+                  🎮
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm line-clamp-1">
@@ -261,7 +256,7 @@ export function EscrowDashboardView() {
                   Smart Contract
                 </span>
                 <button
-                  onClick={() => setTransactionsTab("contract")}
+                  onClick={() => setTransactionsTab("contract-status")}
                   className="text-[10px] text-primary hover:underline flex items-center gap-1"
                 >
                   <FileCode2 className="size-3" />

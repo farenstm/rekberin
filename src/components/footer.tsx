@@ -27,7 +27,7 @@ export function Footer() {
           <button
             onClick={() => {
               setView("transactions");
-              useAppStore.getState().setTransactionsTab("contract");
+              useAppStore.getState().setTransactionsTab("contract-status");
             }}
             className="hover:text-foreground transition-colors flex items-center gap-1.5"
           >

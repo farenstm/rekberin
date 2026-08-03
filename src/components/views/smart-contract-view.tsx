@@ -260,14 +260,14 @@ function AbiTab({
             <span className="font-mono text-sm font-semibold text-foreground">
               {item.name}
             </span>
-            {item.stateMutability && (
+            {("stateMutability" in item && item.stateMutability) && (
               <span className="font-mono text-[10px] text-muted-foreground">
                 {item.stateMutability}
               </span>
             )}
           </div>
 
-          {item.inputs.length > 0 && (
+          {("inputs" in item && item.inputs.length > 0) && (
             <div className="mt-2">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
                 Inputs
@@ -286,7 +286,7 @@ function AbiTab({
             </div>
           )}
 
-          {item.outputs && item.outputs.length > 0 && (
+          {("outputs" in item && item.outputs && item.outputs.length > 0) && (
             <div className="mt-2 pt-2 border-t border-border/40">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
                 Returns

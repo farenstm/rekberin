@@ -92,8 +92,8 @@ export function ListingDetailView() {
               {listing.imageUrl ? (
                 <img src={listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} alt="preview" className="w-full h-full object-cover" />
               ) : (
-                <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80", listing.imageColor)}>
-                  <span className="text-6xl drop-shadow-md">{listing.imageEmoji}</span>
+                <div className="absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80 from-indigo-500/20 to-purple-500/20">
+                  <span className="text-6xl drop-shadow-md">🎮</span>
                 </div>
               )}
               <div className="absolute top-3 left-3">

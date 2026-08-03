@@ -234,7 +234,7 @@ export function HomeView() {
           <button
             onClick={() => {
               setView("transactions");
-              setTransactionsTab("contract");
+              setTransactionsTab("contract-status");
             }}
             className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 hover:border-primary/30 text-sm transition-all"
           >
@@ -285,7 +285,7 @@ export function HomeView() {
         <button
           onClick={() => {
             setView("transactions");
-            setTransactionsTab("contract");
+            setTransactionsTab("contract-status");
           }}
           className="group w-full text-left rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:bg-card/80 transition-all card-elevated"
         >
@@ -340,7 +340,7 @@ function CurrentEscrowPreview({
   onOpen,
 }: {
   txId: string;
-  state: "DEPOSITED" | "HELD" | "RELEASED" | "REFUNDED" | "DISPUTED" | "NONE";
+  state: "DEPOSITED" | "HELD" | "RELEASED" | "REFUNDED" | "DISPUTED" | "NONE" | "REFUND_REQUESTED";
   amount: number;
   listingTitle: string;
   listingImageUrl?: string;
@@ -395,8 +395,8 @@ function CurrentEscrowPreview({
           {listingImageUrl ? (
             <img src={listingImageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} alt="preview" className="w-full h-full object-cover" />
           ) : (
-            <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80", activeEscrow?.listing.imageColor)}>
-              <span className="text-4xl drop-shadow-md">{activeEscrow?.listing.imageEmoji}</span>
+            <div className="absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80 from-indigo-500/20 to-purple-500/20">
+              <span className="text-4xl drop-shadow-md">🎮</span>
             </div>
           )}
         </div>

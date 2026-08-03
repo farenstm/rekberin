@@ -95,6 +95,7 @@ export function CreateListingView() {
         telegram: telegram.trim() || undefined,
         whatsapp: whatsapp.trim() || undefined,
         features: featuresArr,
+        cid: metaCid,
       }, listingId);
 
       setPublishing(false);
