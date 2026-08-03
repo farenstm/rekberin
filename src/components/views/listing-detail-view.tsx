@@ -92,7 +92,9 @@ export function ListingDetailView() {
               {listing.imageUrl ? (
                 <img src={listing.imageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")} alt="preview" className="w-full h-full object-cover" />
               ) : (
-                <div className="absolute inset-0 bg-grid opacity-30" />
+                <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80", listing.imageColor)}>
+                  <span className="text-6xl drop-shadow-md">{listing.imageEmoji}</span>
+                </div>
               )}
               <div className="absolute top-3 left-3">
                 <span className="px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-mono uppercase tracking-wider text-white/90 border border-white/10">
