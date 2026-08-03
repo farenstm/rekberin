@@ -199,16 +199,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
 interface ListingsStore {
   listings: Listing[];
+  isSyncing: boolean;
   createListing: (data: Omit<Listing, "id" | "status" | "createdAt">, onChainId: number) => string;
   updateListingDetails: (id: string, updates: Partial<Listing>) => void;
   getById: (id: string) => Listing | undefined;
   updateListingStatus: (id: string, status: "AVAILABLE" | "LOCKED" | "SOLD") => void;
+  syncListings: () => Promise<void>;
 }
 
 export const useListingsStore = create<ListingsStore>()(
   persist(
     (set, get) => ({
       listings: [],
+      isSyncing: false,
       createListing: (data, onChainId) => {
         const id = `L-${String(onChainId).padStart(3, "0")}`;
         const newListing: Listing = {
@@ -235,6 +238,17 @@ export const useListingsStore = create<ListingsStore>()(
             l.id === id ? { ...l, status } : l
           ),
         }));
+      },
+      syncListings: async () => {
+        set({ isSyncing: true });
+        try {
+          const { fetchAllListingsFromChain } = await import("./web3");
+          const onChainListings = await fetchAllListingsFromChain();
+          set({ listings: onChainListings, isSyncing: false });
+        } catch (err) {
+          console.error("Failed to sync listings", err);
+          set({ isSyncing: false });
+        }
       },
     }),
     {
@@ -268,6 +282,8 @@ interface EscrowStore {
   approveRefund: (txId: string) => void;
   /** Seller rejects refund — REFUND_REQUESTED → HELD (kembali ke hold) */
   rejectRefund: (txId: string) => void;
+  isSyncing: boolean;
+  syncEscrows: () => Promise<void>;
 }
 
 function nextTxNumber(existing: EscrowTransaction[]): string {
@@ -299,6 +315,7 @@ export const useEscrowStore = create<EscrowStore>()(
   persist(
     (set, get) => ({
       transactions: [],
+      isSyncing: false,
       getById: (id) => get().transactions.find((t) => t.id === id),
       getActive: () => {
         return get().transactions.find((t) => t.state === "HELD" || t.state === "REFUND_REQUESTED");
@@ -430,6 +447,40 @@ export const useEscrowStore = create<EscrowStore>()(
         };
       }),
     }));
+  },
+  syncEscrows: async () => {
+    set({ isSyncing: true });
+    try {
+      const { fetchAllEscrowsFromChain } = await import("./web3");
+      const onChainEscrows = await fetchAllEscrowsFromChain();
+      
+      // Merge listing info into escrows
+      const { useListingsStore } = await import("./store");
+      const listings = useListingsStore.getState().listings;
+      
+      const enrichedEscrows = onChainEscrows.map((e: any) => {
+        const listing = listings.find((l) => l.id === e.listingId);
+        return {
+          ...e,
+          listing: listing || {
+            id: e.listingId,
+            title: "Unknown Listing",
+            game: "Unknown",
+            priceMatic: e.amountMatic,
+            priceIDR: e.amountIDR,
+            seller: e.seller,
+            sellerName: "Unknown",
+            imageUrl: "",
+            status: "SOLD",
+          } as any, // fallback
+        };
+      });
+      
+      set({ transactions: enrichedEscrows as EscrowTransaction[], isSyncing: false });
+    } catch (err) {
+      console.error("Failed to sync escrows", err);
+      set({ isSyncing: false });
+    }
   },
     }),
     {

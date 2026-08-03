@@ -1,6 +1,7 @@
 "use client";
 
-import { useAppStore } from "@/lib/store";
+import { useEffect, useRef } from "react";
+import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MetaMaskModal } from "@/components/metamask-modal";
@@ -15,9 +16,28 @@ import { AboutView } from "@/components/views/about-view";
 
 export default function Home() {
   const view = useAppStore((s) => s.view);
+  const syncListings = useListingsStore((s) => s.syncListings);
+  const syncEscrows = useEscrowStore((s) => s.syncEscrows);
+  const isSyncingListings = useListingsStore((s) => s.isSyncing);
+  const isSyncingEscrows = useEscrowStore((s) => s.isSyncing);
+  const hasSynced = useRef(false);
+
+  useEffect(() => {
+    if (!hasSynced.current) {
+      hasSynced.current = true;
+      syncListings().then(() => syncEscrows());
+    }
+  }, [syncListings, syncEscrows]);
+
+  const isSyncing = isSyncingListings || isSyncingEscrows;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      {isSyncing && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-primary/20 overflow-hidden">
+          <div className="h-full bg-primary animate-pulse" style={{ width: "100%", animationDuration: "2s" }} />
+        </div>
+      )}
       <Navbar />
       <main className="flex-1">{renderView(view)}</main>
       <Footer />

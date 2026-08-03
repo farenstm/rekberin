@@ -136,3 +136,90 @@ export async function rejectRefundOnChain(txId: number) {
   const receipt = await tx.wait();
   return receipt;
 }
+
+export async function fetchAllListingsFromChain() {
+  const provider = new ethers.JsonRpcProvider("https://polygon-amoy-bor-rpc.publicnode.com");
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+  const nextId = await contract.nextListingId();
+  const count = Number(nextId) - 1;
+  const listings: any[] = [];
+  
+  for (let i = 1; i <= count; i++) {
+    try {
+      const l = await contract.getListing(i);
+      if (!l.isActive) continue;
+      
+      let metadata: any = {};
+      try {
+        const cid = l.cid.replace("ipfs://", "");
+        const res = await fetch(`https://cloudflare-ipfs.com/ipfs/${cid}`);
+        metadata = await res.json();
+      } catch (e) {
+        console.warn("Failed to fetch metadata for listing", i, e);
+      }
+      
+      const priceMatic = Number(ethers.formatEther(l.price));
+      
+      listings.push({
+        id: `L-${String(i).padStart(3, "0")}`,
+        game: metadata.game || "Unknown",
+        title: metadata.title || "Unknown",
+        tier: metadata.tier || "Unknown",
+        description: metadata.description || "",
+        priceIDR: priceMatic * 6200,
+        priceMatic,
+        imageUrl: metadata.image || "",
+        seller: l.seller,
+        sellerName: "Seller",
+        discord: metadata.discord,
+        telegram: metadata.telegram,
+        whatsapp: metadata.whatsapp,
+        cid: l.cid,
+        status: l.isActive ? "AVAILABLE" : "SOLD",
+        createdAt: Date.now(), // Fallback since on-chain doesn't store creation time for listing
+        features: metadata.features || [],
+      });
+    } catch (e) {
+      console.error(`Failed to fetch listing ${i}`, e);
+    }
+  }
+  return listings.reverse(); // newest first
+}
+
+export async function fetchAllEscrowsFromChain() {
+  const provider = new ethers.JsonRpcProvider("https://polygon-amoy-bor-rpc.publicnode.com");
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+  const nextId = await contract.nextEscrowId();
+  const count = Number(nextId) - 1;
+  const escrows: any[] = [];
+  
+  const STATE_MAP = ["NONE", "DEPOSITED", "HELD", "RELEASED", "REFUNDED", "DISPUTED", "REFUND_REQUESTED"];
+  
+  for (let i = 1; i <= count; i++) {
+    try {
+      const e = await contract.getEscrow(i);
+      const state = STATE_MAP[Number(e.state)] as any;
+      const amountMatic = Number(ethers.formatEther(e.amount));
+      
+      escrows.push({
+        id: `#${i}`,
+        listingId: `L-${String(e.listingId).padStart(3, "0")}`,
+        buyer: e.buyer,
+        seller: e.seller,
+        amountMatic,
+        amountIDR: amountMatic * 6200,
+        state,
+        currentStateLabel: state,
+        createdAt: Number(e.createdAt) * 1000,
+        updatedAt: Number(e.updatedAt) * 1000,
+        events: [], // Basic implementation doesn't reconstruct events
+        buyerConfirmedReceipt: state === "RELEASED",
+        sellerConfirmedDelivery: true,
+        depositTxHash: "", // Not available without event parsing
+      });
+    } catch (err) {
+      console.error(`Failed to fetch escrow ${i}`, err);
+    }
+  }
+  return escrows.reverse(); // newest first
+}
