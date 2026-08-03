@@ -15,7 +15,8 @@ import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { ListingCard } from "@/components/listing-card";
 import { StateBadge } from "@/components/state-badge";
 import { CONTRACT_INFO } from "@/lib/contract";
-import { formatMATIC, timeAgo } from "@/lib/format";
+import { generateTxHash, shortenAddress, timeAgo } from "@/lib/format";
+import { IPFSImage } from "@/components/ipfs-image";
 import { cn } from "@/lib/utils";
 
 export function HomeView() {
@@ -393,7 +394,7 @@ function CurrentEscrowPreview({
           )}
         >
           {listingImageUrl ? (
-            <img src={listingImageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} alt="preview" className="w-full h-full object-cover" />
+            <IPFSImage src={listingImageUrl} alt="preview" className="w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br flex items-center justify-center opacity-80 from-indigo-500/20 to-purple-500/20">
               <span className="text-4xl drop-shadow-md">🎮</span>

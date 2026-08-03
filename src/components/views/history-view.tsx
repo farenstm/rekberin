@@ -11,6 +11,7 @@ import {
   timeAgo,
   formatDate,
 } from "@/lib/format";
+import { IPFSImage } from "@/components/ipfs-image";
 import { cn } from "@/lib/utils";
 import {
   CheckCircle2,
@@ -114,9 +115,9 @@ export function HistoryView() {
                   <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="relative size-11 rounded-lg border border-border shrink-0">
                       {tx.listing.imageUrl ? (
-                        <img 
-                          src={tx.listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/")} 
-                          alt="Thumb" 
+                        <IPFSImage
+                          src={tx.listing.imageUrl}
+                          alt="preview"
                           className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (

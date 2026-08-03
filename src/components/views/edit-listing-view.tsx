@@ -15,6 +15,7 @@ import {
 import { useAppStore, useListingsStore, useWalletStore } from "@/lib/store";
 import { uploadFileToIPFS, uploadMetadataToIPFS } from "@/lib/ipfs";
 import { updateListingOnChain } from "@/lib/web3";
+import { IPFSImage } from "@/components/ipfs-image";
 import { cn } from "@/lib/utils";
 
 export function EditListingView() {
@@ -51,9 +52,7 @@ export function EditListingView() {
       setFeatures(listing.features.join(", "));
       setDiscord(listing.discord || "");
       setTelegram(listing.telegram || "");
-      setWhatsapp(listing.whatsapp || "");
-      setImagePreview(listing.imageUrl ? listing.imageUrl.replace("ipfs://", "https://cloudflare-ipfs.com/ipfs/") : "");
-    }
+      setImagePreview(listing.imageUrl || "");
   }, [listing]);
 
   if (!listing) {
@@ -271,7 +270,11 @@ export function EditListingView() {
               />
               {imagePreview && (
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-border">
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  {imagePreview.startsWith("blob:") ? (
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <IPFSImage src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  )}
                   {game && (
                     <div className="absolute top-2 left-2">
                       <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-mono uppercase tracking-wider text-white/90 border border-white/10">
