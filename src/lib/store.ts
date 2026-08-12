@@ -186,7 +186,22 @@ export const useListingsStore = create<ListingsStore>()(
         try {
           const { fetchAllListingsFromChain } = await import("./web3");
           const onChainListings = await fetchAllListingsFromChain();
-          set({ listings: onChainListings, isSyncing: false });
+          
+          const persistedListings = get().listings;
+          const mergedListings = [...persistedListings];
+          
+          onChainListings.forEach((enriched) => {
+            const index = mergedListings.findIndex((l) => l.id === enriched.id);
+            if (index !== -1) {
+              mergedListings[index] = enriched;
+            } else {
+              mergedListings.push(enriched);
+            }
+          });
+          
+          mergedListings.sort((a, b) => b.createdAt - a.createdAt);
+          
+          set({ listings: mergedListings, isSyncing: false });
         } catch (err) {
           console.error("Failed to sync listings", err);
           set({ isSyncing: false });
@@ -480,7 +495,25 @@ export const useEscrowStore = create<EscrowStore>()(
 
 
       
-      set({ transactions: enrichedEscrows as EscrowTransaction[], isSyncing: false });
+      // Merge with persisted transactions to prevent data loss from stale RPC
+      const mergedTransactions = [...persistedTransactions];
+      
+      enrichedEscrows.forEach((enriched) => {
+        const index = mergedTransactions.findIndex((t) => t.id === enriched.id);
+        if (index !== -1) {
+          // If it exists locally, update it but preserve local-only events if needed
+          // Actually, if it's on-chain, the chain state is the source of truth
+          mergedTransactions[index] = enriched as EscrowTransaction;
+        } else {
+          // New from chain
+          mergedTransactions.push(enriched as EscrowTransaction);
+        }
+      });
+
+      // Sort newest first
+      mergedTransactions.sort((a, b) => b.createdAt - a.createdAt);
+
+      set({ transactions: mergedTransactions, isSyncing: false });
     } catch (err) {
       console.error("Failed to sync escrows", err);
       set({ isSyncing: false });

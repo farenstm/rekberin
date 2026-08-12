@@ -11,7 +11,7 @@ import {
   XCircle,
   Clock,
 } from "lucide-react";
-import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
+import { useAppStore, useListingsStore, useEscrowStore, useWalletStore } from "@/lib/store";
 import { ListingCard } from "@/components/listing-card";
 import { StateBadge } from "@/components/state-badge";
 import { CONTRACT_INFO } from "@/lib/contract";
@@ -37,10 +37,22 @@ export function HomeView() {
   const releasedCount = transactions.filter((t) => t.state === "RELEASED").length;
   const refundedCount = transactions.filter((t) => t.state === "REFUNDED").length;
 
+  const wallet = useWalletStore((s) => s.wallet);
+
+  const userTransactions =
+    wallet.status === "connected"
+      ? transactions.filter(
+          (t) =>
+            t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
+            t.seller.toLowerCase() === wallet.address.toLowerCase()
+        )
+      : transactions;
+
   // Current active escrow (HERO preview)
   const activeEscrow =
-    transactions.find((t) => t.state === "HELD") ||
-    transactions.find((t) => t.state === "DEPOSITED");
+    userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
+    userTransactions.find((t) => t.state === "HELD") ||
+    userTransactions.find((t) => t.state === "DEPOSITED");
 
   return (
     <div className="animate-fade-slide-up">

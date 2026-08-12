@@ -48,11 +48,23 @@ export function EscrowDashboardView() {
   const setView = useAppStore((s) => s.setView);
   const setTransactionsTab = useAppStore((s) => s.setTransactionsTab);
 
+  const wallet = useWalletStore((s) => s.wallet);
+
+  // Filter transactions for the current user if connected
+  const userTransactions =
+    wallet.status === "connected"
+      ? transactions.filter(
+          (t) =>
+            t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
+            t.seller.toLowerCase() === wallet.address.toLowerCase()
+        )
+      : transactions;
+
   // Default to active escrow if no selection
   const activeTx =
-    transactions.find((t) => t.state === "REFUND_REQUESTED") ||
-    transactions.find((t) => t.state === "HELD") ||
-    transactions.find((t) => t.state === "DEPOSITED");
+    userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
+    userTransactions.find((t) => t.state === "HELD") ||
+    userTransactions.find((t) => t.state === "DEPOSITED");
 
   const tx = selectedTxId
     ? transactions.find((t) => t.id === selectedTxId)
