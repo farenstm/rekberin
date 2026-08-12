@@ -56,28 +56,3 @@ export function formatDate(timestamp: number): string {
     minute: "2-digit",
   });
 }
-
-/** Generate random tx hash (untuk simulasi) */
-export function generateTxHash(): string {
-  const chars = "0123456789abcdef";
-  let hash = "0x";
-  for (let i = 0; i < 64; i++) {
-    hash += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return hash;
-}
-
-/** Generate random block number */
-export function generateBlockNumber(): number {
-  return 6_480_000 + Math.floor(Math.random() * 10_000);
-}
-
-/** Generate random IPFS-like CID */
-export function generateCID(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let cid = "bafybei";
-  for (let i = 0; i < 52; i++) {
-    cid += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return cid;
-}

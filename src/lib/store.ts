@@ -13,11 +13,6 @@ import type {
   WalletInfo,
   WalletStatus,
 } from "./types";
-import {
-  generateTxHash,
-  generateBlockNumber,
-  generateCID,
-} from "./format";
 
 // =====================================================================
 // Wallet store — simulate MetaMask connection
@@ -107,91 +102,39 @@ interface AppStore {
   selectedListingId: string | null;
   editListingId: string | null;
   selectedTransactionId: string | null;
-  metamaskModal: {
-    open: boolean;
-    step: "review" | "pending" | "confirmed" | "rejected";
-    title: string;
-    description: string;
-    action: string; // contract method name
-    amountLabel: string; // e.g. "562.5 MATIC"
-    onComplete?: () => void;
-    onReject?: () => void;
-  };
   setView: (v: ViewId) => void;
   setTransactionsTab: (t: TransactionsTab) => void;
   openListing: (id: string) => void;
   openEditListing: (id: string) => void;
   openTransaction: (id: string) => void;
-  openMetaMask: (cfg: {
-    title: string;
-    description: string;
-    action: string;
-    amountLabel: string;
-    imageUrl?: string;
-    onComplete?: () => void;
-    onReject?: () => void;
-  }) => void;
-  closeMetaMask: () => void;
-  confirmMetaMask: () => void;
-  rejectMetaMask: () => void;
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
-  view: "home",
-  transactionsTab: "active",
-  selectedListingId: null,
-  editListingId: null,
-  selectedTransactionId: null,
-  metamaskModal: {
-    open: false,
-    step: "review",
-    title: "",
-    description: "",
-    action: "",
-    amountLabel: "",
-  },
-  setView: (v) => set({ view: v }),
-  setTransactionsTab: (t) => set({ transactionsTab: t }),
-  openListing: (id) =>
-    set({ selectedListingId: id, view: "listing-detail" }),
-  openEditListing: (id) =>
-    set({ editListingId: id, view: "edit-listing" }),
-  openTransaction: (id) =>
-    set({
-      selectedTransactionId: id,
-      view: "transactions",
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set) => ({
+      view: "home",
       transactionsTab: "active",
+      selectedListingId: null,
+      editListingId: null,
+      selectedTransactionId: null,
+      setView: (v) => set({ view: v }),
+      setTransactionsTab: (t) => set({ transactionsTab: t }),
+      openListing: (id) =>
+        set({ selectedListingId: id, view: "listing-detail" }),
+      openEditListing: (id) =>
+        set({ editListingId: id, view: "edit-listing" }),
+      openTransaction: (id) =>
+        set({
+          selectedTransactionId: id,
+          view: "transactions",
+          transactionsTab: "active",
+        }),
     }),
-  openMetaMask: (cfg) =>
-    set({
-      metamaskModal: {
-        open: true,
-        step: "review",
-        title: cfg.title,
-        description: cfg.description,
-        action: cfg.action,
-        amountLabel: cfg.amountLabel,
-        onComplete: cfg.onComplete,
-        onReject: cfg.onReject,
-      },
-    }),
-  closeMetaMask: () =>
-    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } })),
-  confirmMetaMask: async () => {
-    set((s) => ({ metamaskModal: { ...s.metamaskModal, step: "pending" } }));
-    await new Promise((r) => setTimeout(r, 1500));
-    set((s) => ({ metamaskModal: { ...s.metamaskModal, step: "confirmed" } }));
-    await new Promise((r) => setTimeout(r, 900));
-    const onComplete = get().metamaskModal.onComplete;
-    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } }));
-    onComplete?.();
-  },
-  rejectMetaMask: () => {
-    const onReject = get().metamaskModal.onReject;
-    set((s) => ({ metamaskModal: { ...s.metamaskModal, open: false } }));
-    onReject?.();
-  },
-}));
+    {
+      name: "escrowchain-app-state",
+    }
+  )
+);
 
 // =====================================================================
 // Listings store
@@ -217,7 +160,6 @@ export const useListingsStore = create<ListingsStore>()(
         const newListing: Listing = {
           ...data,
           id,
-          cid: generateCID(),
           status: "AVAILABLE",
           createdAt: Date.now(),
         };
@@ -273,15 +215,15 @@ interface EscrowStore {
   getActive: () => EscrowTransaction | undefined;
   getHistory: () => EscrowTransaction[];
   /** Buyer initiate purchase — NONE → HELD */
-  createEscrow: (listing: Listing, buyer: string, onChainId: number) => string;
+  createEscrow: (listing: Listing, buyer: string, onChainId: number, txHash: string, blockNumber: number) => string;
   /** Buyer confirms receipt — HELD → RELEASED */
-  confirmReceived: (txId: string) => void;
+  confirmReceived: (txId: string, txHash: string, blockNumber: number) => void;
   /** Buyer requests refund — HELD → REFUND_REQUESTED (menunggu approval seller) */
-  requestRefund: (txId: string) => void;
+  requestRefund: (txId: string, txHash: string, blockNumber: number) => void;
   /** Seller approves refund — REFUND_REQUESTED → REFUNDED */
-  approveRefund: (txId: string) => void;
+  approveRefund: (txId: string, txHash: string, blockNumber: number) => void;
   /** Seller rejects refund — REFUND_REQUESTED → HELD (kembali ke hold) */
-  rejectRefund: (txId: string) => void;
+  rejectRefund: (txId: string, txHash: string, blockNumber: number) => void;
   isSyncing: boolean;
   syncEscrows: () => Promise<void>;
 }
@@ -298,13 +240,15 @@ function makeEvent(
   txId: string,
   event: EscrowEvent,
   from: string,
+  txHash: string,
+  blockNumber: number,
   data?: Record<string, string | number>,
 ): EscrowEventLog {
   return {
     id: `evt-${txId}-${event}-${Date.now()}`,
     event,
-    txHash: generateTxHash(),
-    blockNumber: generateBlockNumber(),
+    txHash,
+    blockNumber,
     from,
     timestamp: Date.now(),
     data,
@@ -322,14 +266,14 @@ export const useEscrowStore = create<EscrowStore>()(
       },
       getHistory: () =>
         [...get().transactions].sort((a, b) => b.createdAt - a.createdAt),
-  createEscrow: (listing, buyer, onChainId) => {
+  createEscrow: (listing, buyer, onChainId, txHash, blockNumber) => {
     const id = `#${onChainId}`;
     const now = Date.now();
-    const createdEvent = makeEvent(id, "EscrowCreated", buyer, {
+    const createdEvent = makeEvent(id, "EscrowCreated", buyer, txHash, blockNumber, {
       amount: `${listing.priceMatic} MATIC`,
       listingId: listing.id,
     });
-    const depositEvent = makeEvent(id, "Deposited", buyer, {
+    const depositEvent = makeEvent(id, "Deposited", buyer, txHash, blockNumber, {
       amount: `${listing.priceMatic} MATIC`,
     });
     const tx: EscrowTransaction = {
@@ -345,6 +289,7 @@ export const useEscrowStore = create<EscrowStore>()(
       createdAt: now,
       updatedAt: now,
       depositTxHash: depositEvent.txHash,
+      holdTxHash: depositEvent.txHash,
       events: [createdEvent, depositEvent],
       buyerConfirmedReceipt: false,
       sellerConfirmedDelivery: true, // Auto true because no longer needed
@@ -353,7 +298,7 @@ export const useEscrowStore = create<EscrowStore>()(
     set((s) => ({ transactions: [tx, ...s.transactions] }));
     return id;
   },
-  confirmReceived: (txId) => {
+  confirmReceived: (txId, txHash, blockNumber) => {
     set((s) => ({
       transactions: s.transactions.map((t) => {
         if (t.id !== txId) return t;
@@ -362,6 +307,8 @@ export const useEscrowStore = create<EscrowStore>()(
           txId,
           "Released",
           t.buyer,
+          txHash,
+          blockNumber,
           { amount: `${t.amountMatic} MATIC`, buyer: t.buyer },
         );
         useListingsStore.getState().updateListingStatus(t.listingId, "SOLD");
@@ -377,7 +324,7 @@ export const useEscrowStore = create<EscrowStore>()(
       }),
     }));
   },
-  requestRefund: (txId) => {
+  requestRefund: (txId, txHash, blockNumber) => {
     set((s) => ({
       transactions: s.transactions.map((t) => {
         if (t.id !== txId) return t;
@@ -386,6 +333,8 @@ export const useEscrowStore = create<EscrowStore>()(
           txId,
           "RefundRequested",
           t.buyer,
+          txHash,
+          blockNumber,
           { amount: `${t.amountMatic} MATIC`, reason: "Buyer request refund" },
         );
         return {
@@ -398,7 +347,7 @@ export const useEscrowStore = create<EscrowStore>()(
       }),
     }));
   },
-  approveRefund: (txId) => {
+  approveRefund: (txId, txHash, blockNumber) => {
     set((s) => ({
       transactions: s.transactions.map((t) => {
         if (t.id !== txId) return t;
@@ -407,12 +356,16 @@ export const useEscrowStore = create<EscrowStore>()(
           txId,
           "RefundApproved",
           t.seller,
+          txHash,
+          blockNumber,
           { seller: t.listing.sellerName },
         );
         const refundedEvt = makeEvent(
           txId,
           "Refunded",
           t.seller,
+          txHash,
+          blockNumber,
           { amount: `${t.amountMatic} MATIC`, to: t.buyer },
         );
         useListingsStore.getState().updateListingStatus(t.listingId, "AVAILABLE");
@@ -427,7 +380,7 @@ export const useEscrowStore = create<EscrowStore>()(
       }),
     }));
   },
-  rejectRefund: (txId) => {
+  rejectRefund: (txId, txHash, blockNumber) => {
     set((s) => ({
       transactions: s.transactions.map((t) => {
         if (t.id !== txId) return t;
@@ -436,6 +389,8 @@ export const useEscrowStore = create<EscrowStore>()(
           txId,
           "RefundRejected",
           t.seller,
+          txHash,
+          blockNumber,
           { seller: t.listing.sellerName, reason: "Seller rejected refund" },
         );
         return {
@@ -461,11 +416,20 @@ export const useEscrowStore = create<EscrowStore>()(
       await useListingsStore.getState().syncListings();
       
       const listings = useListingsStore.getState().listings;
+      const persistedTransactions = get().transactions;
       
       const enrichedEscrows = onChainEscrows.map((e: any) => {
         const listing = listings.find((l) => l.id === e.listingId);
+        const persisted = persistedTransactions.find((t) => t.id === e.id);
         return {
           ...e,
+          // Read methods return current on-chain state, while receipt details are
+          // retained locally because the contract structs do not store tx hashes.
+          events: persisted?.events.length ? persisted.events : e.events,
+          depositTxHash: persisted?.depositTxHash || e.depositTxHash,
+          holdTxHash: persisted?.holdTxHash,
+          releaseTxHash: persisted?.releaseTxHash,
+          refundTxHash: persisted?.refundTxHash,
           listing: listing || {
             id: e.listingId,
             title: "Unknown Listing",

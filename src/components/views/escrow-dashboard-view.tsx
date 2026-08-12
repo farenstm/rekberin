@@ -573,7 +573,7 @@ function EventLogRow({
         <div className="mt-1 font-mono text-[10px] text-muted-foreground/80 flex items-center gap-1">
           tx:
           <a
-            href={`https://www.oklink.com/amoy/tx/${evt.txHash}`}
+            href={`https://amoy.polygonscan.com/tx/${evt.txHash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary/80 hover:text-primary hover:underline inline-flex items-center gap-1"
@@ -613,7 +613,6 @@ function getEventTone(event: string): string {
 
 function ActionPanel({ tx }: { tx: EscrowTransaction }) {
   const wallet = useWalletStore((s) => s.wallet);
-  const openMetaMask = useAppStore((s) => s.openMetaMask);
   const confirmReceived = useEscrowStore((s) => s.confirmReceived);
   const requestRefund = useEscrowStore((s) => s.requestRefund);
   const approveRefund = useEscrowStore((s) => s.approveRefund);
@@ -630,8 +629,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
     if (!window.confirm("Release dana ke seller? Pastikan Anda sudah menerima akun dan login berhasil.")) return;
     try {
       setIsLoading("confirm");
-      await confirmReceiptOnChain(txNum);
-      confirmReceived(tx.id);
+      const receipt = await confirmReceiptOnChain(txNum);
+      confirmReceived(tx.id, receipt.hash, receipt.blockNumber);
     } catch (err: any) {
       alert("Transaksi gagal: " + err.message);
     } finally {
@@ -643,8 +642,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
     if (!window.confirm("Submit refund request ke seller?")) return;
     try {
       setIsLoading("refund");
-      await requestRefundOnChain(txNum);
-      requestRefund(tx.id);
+      const receipt = await requestRefundOnChain(txNum);
+      requestRefund(tx.id, receipt.hash, receipt.blockNumber);
     } catch (err: any) {
       alert("Transaksi gagal: " + err.message);
     } finally {
@@ -656,8 +655,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
     if (!window.confirm("Setujui refund? Dana akan dikembalikan ke buyer.")) return;
     try {
       setIsLoading("approve");
-      await approveRefundOnChain(txNum);
-      approveRefund(tx.id);
+      const receipt = await approveRefundOnChain(txNum);
+      approveRefund(tx.id, receipt.hash, receipt.blockNumber);
     } catch (err: any) {
       alert("Transaksi gagal: " + err.message);
     } finally {
@@ -669,8 +668,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
     if (!window.confirm("Tolak refund? Escrow kembali ke HELD.")) return;
     try {
       setIsLoading("reject");
-      await rejectRefundOnChain(txNum);
-      rejectRefund(tx.id);
+      const receipt = await rejectRefundOnChain(txNum);
+      rejectRefund(tx.id, receipt.hash, receipt.blockNumber);
     } catch (err: any) {
       alert("Transaksi gagal: " + err.message);
     } finally {
@@ -821,8 +820,9 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
         <div className="p-3 rounded-lg bg-success/10 border border-success/30 flex items-start gap-2.5">
           <CheckCircle2 className="size-4 text-success shrink-0 mt-0.5" />
           <div className="text-xs text-success-foreground/90 leading-relaxed">
-            Dana sudah dilepas ke seller. Transaksi #{tx.id} selesai. Listing{" "}
-            {tx.listing.id} sekarang berstatus SOLD.
+            Pembayaran berhasil diteruskan kepada penjual. Transaksi {tx.id}
+            {" "}telah selesai dan listing &ldquo;{tx.listing.title}&rdquo; ({tx.listing.id})
+            {" "}ditandai sebagai terjual.
           </div>
         </div>
       )}

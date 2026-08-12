@@ -15,7 +15,7 @@ import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { ListingCard } from "@/components/listing-card";
 import { StateBadge } from "@/components/state-badge";
 import { CONTRACT_INFO } from "@/lib/contract";
-import { generateTxHash, shortenAddress, timeAgo, formatMATIC } from "@/lib/format";
+import { shortenAddress, timeAgo, formatMATIC } from "@/lib/format";
 import { IPFSImage } from "@/components/ipfs-image";
 import { cn } from "@/lib/utils";
 

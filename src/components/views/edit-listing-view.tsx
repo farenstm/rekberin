@@ -82,7 +82,7 @@ export function EditListingView() {
       if (imageFile) {
         setPublishStep("Uploading new cover image ke IPFS...");
         const imageCid = await uploadFileToIPFS(imageFile);
-        imageUrl = imageCid.startsWith("blob:") ? imageCid : `ipfs://${imageCid}`;
+        imageUrl = `ipfs://${imageCid}`;
       }
 
       setPublishStep("Uploading metadata baru ke IPFS...");

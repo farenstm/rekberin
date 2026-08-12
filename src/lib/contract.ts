@@ -736,7 +736,7 @@ export const CONTRACT_INFO = {
   chainId: "0x13882",
   chainIdDecimal: 80002,
   deployBlock: 6482517,
-  explorerUrl: "https://www.oklink.com/amoy",
+  explorerUrl: "https://amoy.polygonscan.com",
   rpcUrl: "https://polygon-amoy-bor-rpc.publicnode.com",
   sourceCode: ESCROW_SOLIDITY_SOURCE,
   abi: ESCROW_ABI,

@@ -14,8 +14,11 @@ export function IPFSImage({ src, alt, className }: { src: string; alt?: string; 
 
   if (!src) return null;
 
-  const cid = src.replace("ipfs://", "");
-  const currentUrl = (src.startsWith("blob:") || src.startsWith("data:")) ? src : `${GATEWAYS[gatewayIndex]}${cid}`;
+  const normalizedSrc = src.replace(/^ipfs:\/\//, "");
+  const isDirectUrl = /^(blob:|data:|https?:\/\/)/.test(normalizedSrc);
+  const currentUrl = isDirectUrl
+    ? normalizedSrc
+    : `${GATEWAYS[gatewayIndex]}${normalizedSrc}`;
 
   const handleError = () => {
     if (gatewayIndex < GATEWAYS.length - 1) {

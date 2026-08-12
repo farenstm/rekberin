@@ -93,8 +93,21 @@ export async function cancelListingOnChain(listingId: number) {
 }
 
 export async function createEscrowOnChain(listingId: number, priceMatic: number) {
-  const contract = await getContract();
+  await switchNetworkToAmoy();
+  const signer = await getSigner();
   const priceWei = ethers.parseEther(priceMatic.toString());
+  const buyerAddress = await signer.getAddress();
+  const balanceWei = await signer.provider.getBalance(buyerAddress);
+
+  if (balanceWei <= priceWei) {
+    throw new Error(
+      `Saldo tidak mencukupi. Harga listing ${ethers.formatEther(priceWei)} MATIC, ` +
+      `sedangkan saldo Anda ${Number(ethers.formatEther(balanceWei)).toFixed(4)} MATIC. ` +
+      "Tambahkan test MATIC untuk harga listing dan biaya gas.",
+    );
+  }
+
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
   const tx = await contract.createEscrow(listingId, { value: priceWei });
   const receipt = await tx.wait();
   
@@ -165,14 +178,14 @@ export async function fetchAllListingsFromChain() {
         } else {
           // Fetch from gateways
           const gateways = [
-            `https://gateway.pinata.cloud/ipfs/${cid}`,
+            `https://dweb.link/ipfs/${cid}`,
             `https://ipfs.io/ipfs/${cid}`,
-            `https://cloudflare-ipfs.com/ipfs/${cid}`
+            `https://gateway.pinata.cloud/ipfs/${cid}`
           ];
           
           for (const url of gateways) {
             try {
-              const res = await fetch(url);
+              const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
               if (res.ok) {
                 metadata = await res.json();
                 break;

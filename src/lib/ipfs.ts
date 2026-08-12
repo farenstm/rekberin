@@ -1,61 +1,31 @@
-export async function uploadFileToIPFS(file: File): Promise<string> {
-  const apiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
-  const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
+async function parseUploadResponse(response: Response): Promise<string> {
+  const data = await response.json().catch(() => ({}));
 
-  if (!apiKey || !apiSecret) {
-    console.warn("No Pinata API keys found. Mocking IPFS file upload with base64.");
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return new Promise((resolve, reject) => {
-      if (typeof window === "undefined") {
-        resolve(`QmMockFileCid${Date.now()}`);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  if (!response.ok || typeof data.cid !== "string") {
+    throw new Error(data.error || "Upload ke IPFS gagal");
   }
 
-  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-  const data = new FormData();
-  data.append("file", file);
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      pinata_api_key: apiKey,
-      pinata_secret_api_key: apiSecret,
-    },
-    body: data,
-  });
-  const resData = await res.json();
-  return resData.IpfsHash;
+  return data.cid;
 }
 
-export async function uploadMetadataToIPFS(metadata: any): Promise<string> {
-  const apiKey = process.env.NEXT_PUBLIC_PINATA_API_KEY;
-  const apiSecret = process.env.NEXT_PUBLIC_PINATA_API_SECRET;
+export async function uploadFileToIPFS(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
 
-  if (!apiKey || !apiSecret) {
-    console.warn("No Pinata API keys found. Saving metadata as base64 data URI.");
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    if (typeof window !== "undefined") {
-      return `data:application/json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(metadata))))}`;
-    }
-    return `QmMockMetadataCid${Date.now()}`;
-  }
-
-  const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
-  const res = await fetch(url, {
+  const response = await fetch("/api/ipfs/file", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      pinata_api_key: apiKey,
-      pinata_secret_api_key: apiSecret,
-    },
+    body: formData,
+  });
+
+  return parseUploadResponse(response);
+}
+
+export async function uploadMetadataToIPFS(metadata: unknown): Promise<string> {
+  const response = await fetch("/api/ipfs/metadata", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(metadata),
   });
-  const resData = await res.json();
-  return resData.IpfsHash;
+
+  return parseUploadResponse(response);
 }

@@ -26,11 +26,12 @@ import { useState } from "react";
 export function ListingDetailView() {
   const selectedId = useAppStore((s) => s.selectedListingId);
   const setView = useAppStore((s) => s.setView);
-  const openMetaMask = useAppStore((s) => s.openMetaMask);
   const openTransaction = useAppStore((s) => s.openTransaction);
   const getById = useListingsStore((s) => s.getById);
   const createEscrow = useEscrowStore((s) => s.createEscrow);
   const wallet = useWalletStore((s) => s.wallet);
+  const [isBuying, setIsBuying] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const listing = selectedId ? getById(selectedId) : undefined;
 
@@ -48,9 +49,6 @@ export function ListingDetailView() {
     );
   }
 
-  const [isBuying, setIsBuying] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
-
   const handleBuy = async () => {
     if (wallet.status !== "connected") {
       alert("Connect wallet dulu");
@@ -59,13 +57,20 @@ export function ListingDetailView() {
     try {
       setIsBuying(true);
       const numId = parseInt(listing.id.replace(/\D/g, ""), 10);
-      const { escrowId } = await createEscrowOnChain(numId, listing.priceMatic);
+      const { receipt, escrowId } = await createEscrowOnChain(numId, listing.priceMatic);
       
-      const newTxId = createEscrow(listing, wallet.address, escrowId);
+      const newTxId = createEscrow(
+        listing,
+        wallet.address,
+        escrowId,
+        receipt.hash,
+        receipt.blockNumber,
+      );
       openTransaction(newTxId);
     } catch (err: any) {
       console.error(err);
-      alert("Transaksi dibatalkan atau gagal: " + err.message);
+      const message = err?.shortMessage || err?.message || "Transaksi tidak dapat diproses.";
+      alert(message);
     } finally {
       setIsBuying(false);
     }

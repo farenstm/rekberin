@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { MetaMaskModal } from "@/components/metamask-modal";
 import { HomeView } from "@/components/views/home-view";
 import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ListingDetailView } from "@/components/views/listing-detail-view";
@@ -41,7 +40,6 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">{renderView(view)}</main>
       <Footer />
-      <MetaMaskModal />
     </div>
   );
 }

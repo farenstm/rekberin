@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Lock, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { Shield, Lock, CheckCircle2, XCircle, Clock, AlertCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EscrowState, EscrowTransaction } from "@/lib/types";
 
@@ -168,18 +168,18 @@ export function EscrowTimeline({ tx, variant = "full" }: EscrowTimelineProps) {
                 {step.description}
               </p>
 
-              {/* Tx hash display for completed steps */}
-              {step.completed && step.txHash && (
+              {/* Show the real receipt link as soon as this state has a tx hash. */}
+              {step.txHash && (
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/30 border border-border/50 font-mono text-[10px] text-muted-foreground w-fit">
                   <span className="text-foreground/40">tx:</span>
                   <a 
-                    href={`https://www.oklink.com/amoy/tx/${step.txHash}`}
+                    href={`https://amoy.polygonscan.com/tx/${step.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono-num text-primary/80 hover:text-primary hover:underline transition-colors flex items-center gap-1"
                   >
                     {step.txHash.slice(0, 10)}...{step.txHash.slice(-8)}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    <ExternalLink className="size-2.5" />
                   </a>
                 </div>
               )}
@@ -194,6 +194,7 @@ export function EscrowTimeline({ tx, variant = "full" }: EscrowTimelineProps) {
 // ============= Build steps based on state =============
 
 function buildSteps(tx: EscrowTransaction): TimelineStep[] {
+  const refundRequestEvent = tx.events.find((e) => e.event === "RefundRequested");
   const isRefundPath =
     tx.state === "REFUND_REQUESTED" ||
     tx.state === "REFUNDED" ||
@@ -252,10 +253,10 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
       description:
         "Buyer minta refund. Menunggu approval seller untuk mengembalikan dana.",
       icon: AlertCircle,
-      completed: tx.state === "REFUNDED",
+      completed: !!refundRequestEvent && tx.state !== "REFUND_REQUESTED",
       active: tx.state === "REFUND_REQUESTED",
       tone: "refund-req",
-      txHash: tx.events.find((e) => e.event === "RefundRequested")?.txHash,
+      txHash: refundRequestEvent?.txHash,
     },
     {
       key: "REFUNDED",

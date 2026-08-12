@@ -57,7 +57,7 @@ export function CreateListingView() {
     try {
       setPublishStep("Uploading cover image ke IPFS...");
       const imageCid = await uploadFileToIPFS(imageFile);
-      const imageUrl = imageCid.startsWith("blob:") ? imageCid : `ipfs://${imageCid}`;
+      const imageUrl = `ipfs://${imageCid}`;
 
       setPublishStep("Uploading metadata ke IPFS...");
       const featuresArr = features
