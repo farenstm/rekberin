@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -20,8 +20,10 @@ export default function Home() {
   const isSyncingListings = useListingsStore((s) => s.isSyncing);
   const isSyncingEscrows = useEscrowStore((s) => s.isSyncing);
   const hasSynced = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (!hasSynced.current) {
       hasSynced.current = true;
       syncListings().then(() => syncEscrows());
@@ -38,7 +40,15 @@ export default function Home() {
         </div>
       )}
       <Navbar />
-      <main className="flex-1">{renderView(view)}</main>
+      <main className="flex-1">
+        {mounted ? (
+          renderView(view)
+        ) : (
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+      </main>
       <Footer />
     </div>
   );
