@@ -235,12 +235,46 @@ export async function fetchAllEscrowsFromChain() {
   const escrows: any[] = [];
   
   const STATE_MAP = ["HELD", "RELEASED", "REFUND_REQUESTED", "REFUNDED"];
+
+  // Fetch real tx hashes from on-chain events (search last 300k blocks in chunks of 10k)
+  const txMap: Record<string, { createTx?: string; createBlock?: number; stateTx?: string; stateBlock?: number }> = {};
+  try {
+    const currentBlock = await provider.getBlockNumber();
+    for (let chunk = 0; chunk < 30; chunk++) {
+      const to = currentBlock - chunk * 10000;
+      const from = to - 10000;
+      
+      const createdEvents = await contract.queryFilter(contract.filters.EscrowCreated(), from, to);
+      for (const ev of createdEvents) {
+        const id = `#${ev.args[0].toString()}`;
+        if (!txMap[id]) txMap[id] = {};
+        txMap[id].createTx = ev.transactionHash;
+        txMap[id].createBlock = ev.blockNumber;
+      }
+
+      const stateEvents = await contract.queryFilter(contract.filters.EscrowStateChanged(), from, to);
+      for (const ev of stateEvents) {
+        const id = `#${ev.args[0].toString()}`;
+        if (!txMap[id]) txMap[id] = {};
+        // Keep latest state change tx
+        txMap[id].stateTx = ev.transactionHash;
+        txMap[id].stateBlock = ev.blockNumber;
+      }
+
+      // Stop early if we found all escrows
+      const foundAll = Array.from({ length: count }, (_, i) => `#${i + 1}`).every(id => txMap[id]?.createTx);
+      if (foundAll) break;
+    }
+  } catch (err) {
+    console.warn("Could not fetch on-chain event hashes:", err);
+  }
   
   for (let i = 1; i <= count; i++) {
     try {
       const e = await contract.getEscrow(i);
       const state = STATE_MAP[Number(e.state)] as any;
       const amountMatic = Number(ethers.formatEther(e.amount));
+      const realTx = txMap[`#${i}`] ?? {};
       
       escrows.push({
         id: `#${i}`,
@@ -253,10 +287,15 @@ export async function fetchAllEscrowsFromChain() {
         currentStateLabel: state,
         createdAt: Number(e.createdAt) * 1000,
         updatedAt: Number(e.updatedAt) * 1000,
-        events: [], // Basic implementation doesn't reconstruct events
+        events: [],
         buyerConfirmedReceipt: state === "RELEASED",
         sellerConfirmedDelivery: true,
-        depositTxHash: "", // Not available without event parsing
+        depositTxHash: realTx.createTx ?? "",
+        // Carry real event hashes for use in store enrichment
+        _realCreateTx: realTx.createTx ?? null,
+        _realCreateBlock: realTx.createBlock ?? null,
+        _realStateTx: realTx.stateTx ?? null,
+        _realStateBlock: realTx.stateBlock ?? null,
       });
     } catch (err) {
       console.error(`Failed to fetch escrow ${i}`, err);
@@ -264,3 +303,4 @@ export async function fetchAllEscrowsFromChain() {
   }
   return escrows.reverse(); // newest first
 }
+

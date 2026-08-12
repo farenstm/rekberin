@@ -422,24 +422,14 @@ export const useEscrowStore = create<EscrowStore>()(
       const listings = useListingsStore.getState().listings;
       const persistedTransactions = get().transactions;
       
-      // Real on-chain tx hashes fetched directly from Polygon Amoy - always takes priority
-          const REAL_TX: Record<string, { createTx: string; createBlock: number; stateTx?: string; stateBlock?: number }> = {
-            "#6": { createTx: "0xd0cc796e309d361298c7a0a4f72f708618c0d4b4ad0ecea9b8fd6c0ca49c82e8", createBlock: 44723600, stateTx: "0x37dfd149fab351dccc432d1f06807e17939d5ddb8df4d825548e570e2ec9a21b", stateBlock: 44723658 },
-            "#7": { createTx: "0xc6e16347e612ad6a8d0ffb71e18c125d3a3ddc1d4519c655a62fbba77a03a230", createBlock: 44724983, stateTx: "0x80797ce8c2d93251dc26bd989f67d4c3b834eec57905a3d4a8553d0de9cf12b5", stateBlock: 44725105 },
-            "#8": { createTx: "0xd62858b417351f932c7955d14518ccb108483ef20d6ae78a28158bd128686aa2", createBlock: 44725545 },
-          };
-
       const enrichedEscrows = onChainEscrows.map((e: any) => {
         const listing = listings.find((l) => l.id === e.listingId);
-        const persisted = persistedTransactions.find((t) => t.id === e.id);
 
-        const realData = REAL_TX[e.id];
-
-        // Always use real on-chain hashes when available (overrides stale persisted data)
-        const createTx = realData?.createTx ?? persisted?.depositTxHash ?? null;
-        const createBlock = realData?.createBlock ?? 44000000;
-        const stateTx = realData?.stateTx ?? persisted?.releaseTxHash ?? persisted?.refundTxHash ?? null;
-        const stateBlock = realData?.stateBlock ?? (createBlock + 10);
+        // Use real on-chain hashes fetched live from Polygon Amoy events (never use stale persisted fake hashes)
+        const createTx: string | null = e._realCreateTx ?? null;
+        const createBlock: number = e._realCreateBlock ?? 0;
+        const stateTx: string | null = e._realStateTx ?? null;
+        const stateBlock: number = e._realStateBlock ?? (createBlock + 10);
 
         const finalDepositTx = createTx;
         const finalHoldTx = createTx;
@@ -469,12 +459,9 @@ export const useEscrowStore = create<EscrowStore>()(
           );
         }
 
-        // If still no events (unknown escrow without real tx data), use persisted if available
-        const events = finalEvents.length > 0 ? finalEvents : (persisted?.events ?? []);
-
         return {
           ...e,
-          events,
+          events: finalEvents,
           depositTxHash: finalDepositTx,
           holdTxHash: finalHoldTx,
           releaseTxHash: finalReleaseTx,
@@ -492,6 +479,7 @@ export const useEscrowStore = create<EscrowStore>()(
           } as any,
         };
       });
+
 
       
       set({ transactions: enrichedEscrows as EscrowTransaction[], isSyncing: false });
