@@ -501,9 +501,16 @@ export const useEscrowStore = create<EscrowStore>()(
       enrichedEscrows.forEach((enriched) => {
         const index = mergedTransactions.findIndex((t) => t.id === enriched.id);
         if (index !== -1) {
-          // If it exists locally, update it but preserve local-only events if needed
-          // Actually, if it's on-chain, the chain state is the source of truth
-          mergedTransactions[index] = enriched as EscrowTransaction;
+          // Preserve local events and tx hashes if the RPC failed to fetch them
+          const localTx = mergedTransactions[index];
+          mergedTransactions[index] = {
+            ...(enriched as EscrowTransaction),
+            events: enriched.events.length > 0 ? enriched.events : localTx.events,
+            depositTxHash: enriched.depositTxHash || localTx.depositTxHash,
+            holdTxHash: enriched.holdTxHash || localTx.holdTxHash,
+            releaseTxHash: enriched.releaseTxHash || localTx.releaseTxHash,
+            refundTxHash: enriched.refundTxHash || localTx.refundTxHash,
+          };
         } else {
           // New from chain
           mergedTransactions.push(enriched as EscrowTransaction);
