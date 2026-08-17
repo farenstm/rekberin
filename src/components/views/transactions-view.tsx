@@ -2,11 +2,10 @@
 
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Gauge, History as HistoryIcon, Activity, FileCode2 } from "lucide-react";
+import { Gauge, History as HistoryIcon, Activity } from "lucide-react";
 import type { TransactionsTab } from "@/lib/types";
 import { EscrowDashboardView } from "./escrow-dashboard-view";
 import { HistoryView } from "./history-view";
-import { SmartContractView } from "./smart-contract-view";
 import { ContractStatusView } from "./contract-status-view";
 
 const TABS: Array<{
@@ -18,7 +17,6 @@ const TABS: Array<{
   { id: "active", label: "Active Escrow", icon: Gauge, description: "Current transaction state machine" },
   { id: "history", label: "History", icon: HistoryIcon, description: "All past transactions" },
   { id: "contract-status", label: "Contract Status", icon: Activity, description: "Live counts & state distribution" },
-  { id: "contract-source", label: "Source Code", icon: FileCode2, description: "EscrowChain.sol & ABI" },
 ];
 
 export function TransactionsView() {
@@ -70,7 +68,6 @@ export function TransactionsView() {
       {tab === "active" && <EscrowDashboardView />}
       {tab === "history" && <HistoryView />}
       {tab === "contract-status" && <ContractStatusView />}
-      {tab === "contract-source" && <SmartContractView />}
     </div>
   );
 }

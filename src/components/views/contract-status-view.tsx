@@ -14,7 +14,6 @@ import {
   Network,
   Database,
   Cpu,
-  FileCode2,
   Shield,
   Receipt,
   Tag,
@@ -25,7 +24,6 @@ import type { EscrowState } from "@/lib/types";
 export function ContractStatusView() {
   const transactions = useEscrowStore((s) => s.transactions);
   const listings = useListingsStore((s) => s.listings);
-  const setTransactionsTab = useAppStore((s) => s.setTransactionsTab);
   const openTransaction = useAppStore((s) => s.openTransaction);
 
   // Stats
@@ -74,13 +72,6 @@ export function ContractStatusView() {
                 Contract Info
               </span>
             </div>
-            <button
-              onClick={() => setTransactionsTab("contract-source")}
-              className="text-[10px] text-primary hover:underline flex items-center gap-1"
-            >
-              <FileCode2 className="size-3" />
-              View source
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
