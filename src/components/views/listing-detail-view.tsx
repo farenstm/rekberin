@@ -172,13 +172,13 @@ export function ListingDetailView() {
               </p>
 
               {/* Features */}
-              {listing.features.length > 0 && (
+              {(listing.features || []).length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border/60">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
                     Highlights
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {listing.features.map((f) => (
+                    {(listing.features || []).map((f) => (
                       <span
                         key={f}
                         className="px-2 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider bg-muted/40 text-foreground/80 border border-border/50 flex items-center gap-1.5"

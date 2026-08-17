@@ -56,9 +56,9 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
       <div className="p-3.5 space-y-3">
         <div className="space-y-1">
           <h3 className="font-medium text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-            {listing.title}
+            {listing.title || listing.tier || "Game Account"}
           </h3>
-          {!compact && (
+          {!compact && listing.description && (
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
               {listing.description}
             </p>
@@ -66,9 +66,9 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
         </div>
 
         {/* Features */}
-        {!compact && listing.features.length > 0 && (
+        {!compact && (listing.features || []).length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {listing.features.slice(0, 3).map((f) => (
+            {(listing.features || []).slice(0, 3).map((f) => (
               <span
                 key={f}
                 className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-muted/40 text-muted-foreground border border-border/50"

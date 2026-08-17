@@ -484,6 +484,9 @@ export const useEscrowStore = create<EscrowStore>()(
               listing: listing || {
                 id: e.listingId,
                 title: "Unknown Listing",
+                tier: "Standard",
+                description: "Escrow transaction",
+                features: [],
                 game: "Unknown",
                 priceMatic: e.amountMatic,
                 priceIDR: e.amountIDR,
