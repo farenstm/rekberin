@@ -40,27 +40,28 @@ export function HistoryView() {
 
   const userTransactions = useMemo(() => {
     if (wallet.status !== "connected" || !wallet.address) return [];
-    return transactions.filter(
+    return (transactions || []).filter(
       (t) =>
-        isSameAddress(t.buyer, wallet.address) ||
-        isSameAddress(t.seller, wallet.address),
+        t &&
+        (isSameAddress(t.buyer, wallet.address) ||
+          isSameAddress(t.seller, wallet.address)),
     );
   }, [transactions, wallet]);
 
   const filtered = useMemo(() => {
     let list = [...userTransactions].sort(
-      (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
+      (a, b) => ((b && b.createdAt) || 0) - ((a && a.createdAt) || 0),
     );
-    if (filter !== "ALL") list = list.filter((t) => t.state === filter);
+    if (filter !== "ALL") list = list.filter((t) => t && t.state === filter);
     return list;
   }, [userTransactions, filter]);
 
   const stats = useMemo(() => {
     const total = userTransactions.length;
-    const released = userTransactions.filter((t) => t.state === "RELEASED").length;
-    const refunded = userTransactions.filter((t) => t.state === "REFUNDED").length;
+    const released = userTransactions.filter((t) => t && t.state === "RELEASED").length;
+    const refunded = userTransactions.filter((t) => t && t.state === "REFUNDED").length;
     const held = userTransactions.filter(
-      (t) => t.state === "HELD" || t.state === "DEPOSITED",
+      (t) => t && (t.state === "HELD" || t.state === "DEPOSITED"),
     ).length;
     return { total, released, refunded, held };
   }, [userTransactions]);
@@ -221,20 +222,21 @@ function StatCard({
   );
 }
 
-function CompactTimeline({ state }: { state: EscrowState }) {
-  const isRefundPath = state === "REFUND_REQUESTED" || state === "REFUNDED";
+function CompactTimeline({ state }: { state?: EscrowState }) {
+  const currentState = state || "HELD";
+  const isRefundPath = currentState === "REFUND_REQUESTED" || currentState === "REFUNDED";
   const steps = isRefundPath
     ? [
         { label: "Held", done: true, active: false },
-        { label: "Refund Req", done: true, active: state === "REFUND_REQUESTED" },
-        { label: state === "REFUNDED" ? "Refunded" : "Pending", done: state === "REFUNDED", active: false },
+        { label: "Refund Req", done: true, active: currentState === "REFUND_REQUESTED" },
+        { label: currentState === "REFUNDED" ? "Refunded" : "Pending", done: currentState === "REFUNDED", active: false },
       ]
     : [
-        { label: "Held", done: true, active: state === "HELD" },
-        { label: "Release", done: state === "RELEASED", active: false },
+        { label: "Held", done: true, active: currentState === "HELD" },
+        { label: "Release", done: currentState === "RELEASED", active: false },
       ];
 
-  const isRefunded = state === "REFUNDED";
+  const isRefunded = currentState === "REFUNDED";
 
   return (
     <div className="flex items-center gap-1.5">

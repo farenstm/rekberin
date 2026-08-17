@@ -106,9 +106,11 @@ export function StateBadge({
   className,
 }: StateBadgeProps) {
   const cfg =
-    state in ESCROW_STATE_CONFIG
+    (state && state in ESCROW_STATE_CONFIG
       ? ESCROW_STATE_CONFIG[state as EscrowState]
-      : LISTING_STATUS_CONFIG[state as ListingStatus];
+      : state && state in LISTING_STATUS_CONFIG
+        ? LISTING_STATUS_CONFIG[state as ListingStatus]
+        : null) || ESCROW_STATE_CONFIG.NONE;
 
   const sizes = {
     sm: "text-[10px] px-2 py-0.5 gap-1",
