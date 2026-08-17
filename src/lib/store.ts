@@ -39,8 +39,18 @@ export const useWalletStore = create<WalletStore>()(
       connect: async () => {
         set((s) => ({ wallet: { ...s.wallet, status: "connecting" } }));
         try {
-          if (typeof window === "undefined" || !window.ethereum) {
-            throw new Error("No crypto wallet found");
+          if (typeof window === "undefined") {
+            throw new Error("No window object");
+          }
+          if (!window.ethereum) {
+            console.warn("No Web3 wallet extension found, connecting Demo Wallet");
+            set((s) => ({
+              wallet: {
+                ...DEFAULT_WALLET,
+                status: "connected",
+              },
+            }));
+            return;
           }
           const { switchNetworkToAmoy } = await import("./web3");
           await switchNetworkToAmoy();
