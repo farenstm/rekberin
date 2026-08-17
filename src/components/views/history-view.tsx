@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAppStore, useEscrowStore } from "@/lib/store";
+import { useAppStore, useEscrowStore, useWalletStore } from "@/lib/store";
 import { StateBadge } from "@/components/state-badge";
 import {
   formatIDR,
