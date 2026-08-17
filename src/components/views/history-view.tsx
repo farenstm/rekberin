@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAppStore, useEscrowStore, useWalletStore } from "@/lib/store";
+import { useAppStore, useEscrowStore } from "@/lib/store";
 import { StateBadge } from "@/components/state-badge";
 import {
   formatIDR,
@@ -35,47 +35,29 @@ const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
 export function HistoryView() {
   const transactions = useEscrowStore((s) => s.transactions);
   const openTransaction = useAppStore((s) => s.openTransaction);
-  const wallet = useWalletStore((s) => s.wallet);
   const [filter, setFilter] = useState<EscrowState | "ALL">("ALL");
 
-  const userTransactions = useMemo(() => {
-    if (wallet.status !== "connected" || !wallet.address) return [];
-    return (transactions || []).filter(
-      (t) =>
-        t &&
-        (isSameAddress(t.buyer, wallet.address) ||
-          isSameAddress(t.seller, wallet.address)),
-    );
-  }, [transactions, wallet]);
+  const allTransactions = useMemo(() => {
+    return (transactions || []).filter((t) => Boolean(t));
+  }, [transactions]);
 
   const filtered = useMemo(() => {
-    let list = [...userTransactions].sort(
+    let list = [...allTransactions].sort(
       (a, b) => ((b && b.createdAt) || 0) - ((a && a.createdAt) || 0),
     );
     if (filter !== "ALL") list = list.filter((t) => t && t.state === filter);
     return list;
-  }, [userTransactions, filter]);
+  }, [allTransactions, filter]);
 
   const stats = useMemo(() => {
-    const total = userTransactions.length;
-    const released = userTransactions.filter((t) => t && t.state === "RELEASED").length;
-    const refunded = userTransactions.filter((t) => t && t.state === "REFUNDED").length;
-    const held = userTransactions.filter(
+    const total = allTransactions.length;
+    const released = allTransactions.filter((t) => t && t.state === "RELEASED").length;
+    const refunded = allTransactions.filter((t) => t && t.state === "REFUNDED").length;
+    const held = allTransactions.filter(
       (t) => t && (t.state === "HELD" || t.state === "DEPOSITED"),
     ).length;
     return { total, released, refunded, held };
-  }, [userTransactions]);
-
-  if (wallet.status !== "connected") {
-    return (
-      <div className="px-4 py-24 flex flex-col items-center justify-center text-center">
-        <h3 className="text-xl font-bold mb-2">Hubungkan Wallet Anda 🔒</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-          Riwayat transaksi bersifat privat. Silakan hubungkan wallet Web3 Anda untuk melihat riwayat transaksi Anda.
-        </p>
-      </div>
-    );
-  }
+  }, [allTransactions]);
 
   return (
     <div className="animate-fade-slide-up">
