@@ -94,34 +94,6 @@ const TECH_STACK: TechItem[] = [
   },
 ];
 
-const ARCHITECTURE_LAYERS = [
-  {
-    layer: "Presentation Layer",
-    tech: "React + Next.js + Tailwind CSS",
-    desc: "UI components, routing, state management via Zustand",
-  },
-  {
-    layer: "Web3 Interaction Layer",
-    tech: "Ethers.js + MetaMask",
-    desc: "Signing transaksi, membaca state contract, event listening",
-  },
-  {
-    layer: "Smart Contract Layer",
-    tech: "Solidity + EVM",
-    desc: "EscrowChain.sol — FSM escrow logic, role-based access control",
-  },
-  {
-    layer: "Storage Layer",
-    tech: "IPFS",
-    desc: "Decentralized storage untuk metadata listing",
-  },
-  {
-    layer: "Blockchain Layer",
-    tech: "Polygon Amoy Testnet",
-    desc: "EVM-compatible L2, native POL token, fast finality",
-  },
-];
-
 export function AboutView() {
   const setView = useAppStore((s) => s.setView);
 
@@ -186,44 +158,6 @@ export function AboutView() {
         </div>
       </section>
 
-      {/* Architecture layers */}
-      <section className="px-4 md:px-6 py-12 border-t border-border/60 bg-muted/10">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              Arsitektur
-            </span>
-            <h2 className="text-xl md:text-2xl font-bold mt-1">
-              5 lapisan sistem
-            </h2>
-          </div>
-
-          <div className="space-y-2">
-            {ARCHITECTURE_LAYERS.map((layer, i) => (
-              <div
-                key={layer.layer}
-                className="rounded-lg border border-border bg-card p-4 flex items-start gap-4"
-              >
-                <div className="size-8 rounded-md bg-primary/10 border border-primary/30 flex items-center justify-center font-mono text-sm font-bold text-primary shrink-0">
-                  {i + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                    <h3 className="font-semibold text-sm">{layer.layer}</h3>
-                    <span className="font-mono text-xs text-primary">
-                      {layer.tech}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {layer.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Contract info */}
       <section className="px-4 md:px-6 py-12 max-w-4xl mx-auto">
         <div className="rounded-2xl border border-border bg-card p-6 card-elevated">
@@ -256,99 +190,12 @@ export function AboutView() {
 
           <div className="mt-5 pt-5 border-t border-border/60 flex flex-wrap gap-2">
             <button
-              onClick={() => setView("transactions")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-muted/30 hover:bg-muted/60 hover:border-primary/30 text-xs font-medium transition-all"
-            >
-              <FileCode2 className="size-3.5 text-primary" />
-              View Source Code
-            </button>
-            <button
               onClick={() => setView("how-it-works")}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-muted/30 hover:bg-muted/60 hover:border-primary/30 text-xs font-medium transition-all"
             >
               <BookOpen className="size-3.5 text-primary" />
               How It Works
             </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Research scope */}
-      <section className="px-4 md:px-6 py-12 border-t border-border/60 bg-muted/10">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              Research Scope
-            </span>
-            <h2 className="text-xl md:text-2xl font-bold mt-1">
-              Lingkup penelitian
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-success/30 bg-success/5 p-5">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-success font-semibold mb-3">
-                ✓ In Scope
-              </div>
-              <ul className="space-y-2 text-sm text-foreground/90">
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  Smart contract escrow dengan FSM pattern
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  State transitions on-chain (Polygon Amoy)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  Role-based access (buyer, seller)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  Refund flow dengan seller approval
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  IPFS storage untuk listing metadata
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-success mt-0.5">•</span>
-                  Event log transparan & auditable
-                </li>
-              </ul>
-            </div>
-
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-destructive font-semibold mb-3">
-                ✗ Out of Scope
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Chat internal antar buyer & seller
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Rating & review seller
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Wishlist & keranjang belanja
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Promo, voucher, diskon
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Notifikasi push kompleks
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-0.5">•</span>
-                  Arbitrasi sengketa otomatis
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
