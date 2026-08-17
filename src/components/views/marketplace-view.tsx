@@ -29,22 +29,22 @@ export function MarketplaceView() {
   const [sort, setSort] = useState("newest");
 
   const filtered = useMemo(() => {
-    let list = [...listings].filter((l) => l.status === "AVAILABLE");
+    let list = [...(listings || [])].filter((l) => l && l.status === "AVAILABLE");
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
         (l) =>
-          l.title.toLowerCase().includes(q) ||
-          l.game.toLowerCase().includes(q) ||
-          l.tier.toLowerCase().includes(q) ||
-          l.description.toLowerCase().includes(q),
+          (l.title || "").toLowerCase().includes(q) ||
+          (l.game || "").toLowerCase().includes(q) ||
+          (l.tier || "").toLowerCase().includes(q) ||
+          (l.description || "").toLowerCase().includes(q),
       );
     }
-    if (game !== "All") list = list.filter((l) => l.game === game);
+    if (game !== "All") list = list.filter((l) => l && l.game === game);
     list.sort((a, b) => {
-      if (sort === "price-low") return a.priceIDR - b.priceIDR;
-      if (sort === "price-high") return b.priceIDR - a.priceIDR;
-      return b.createdAt - a.createdAt;
+      if (sort === "price-low") return (a.priceIDR || 0) - (b.priceIDR || 0);
+      if (sort === "price-high") return (b.priceIDR || 0) - (a.priceIDR || 0);
+      return (b.createdAt || 0) - (a.createdAt || 0);
     });
     return list;
   }, [listings, query, game, sort]);

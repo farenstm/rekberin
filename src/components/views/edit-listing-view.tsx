@@ -47,12 +47,13 @@ export function EditListingView() {
   useEffect(() => {
     if (listing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync form inputs with active listing data upon view load
-      setGame(listing.game);
-      setTier(listing.tier);
-      setPriceIDR(listing.priceIDR.toString());
-      setDescription(listing.description);
+      setGame(listing.game || "");
+      setTier(listing.tier || listing.title || "");
+      setPriceIDR(listing.priceIDR ? String(listing.priceIDR) : "");
+      setDescription(listing.description || "");
       setDiscord(listing.discord || "");
       setTelegram(listing.telegram || "");
+      setWhatsapp(listing.whatsapp || "");
       setImagePreview(listing.imageUrl || "");
     }
   }, [listing]);

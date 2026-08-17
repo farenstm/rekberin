@@ -162,7 +162,7 @@ export function ContractStatusView() {
                             {tx.id}
                           </span>
                           <span className="text-[11px] text-muted-foreground truncate">
-                            {tx.listing.title}
+                            {tx.listing?.title || "Game Account"}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
@@ -209,7 +209,7 @@ export function ContractStatusView() {
                     </span>
                     <StateBadge state={tx.state} size="sm" pulse />
                     <span className="text-xs text-muted-foreground truncate hidden md:inline">
-                      {tx.listing.title}
+                      {tx.listing?.title || "Game Account"}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

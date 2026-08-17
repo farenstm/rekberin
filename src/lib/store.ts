@@ -53,17 +53,28 @@ export const useWalletStore = create<WalletStore>()(
           
           // Listen for account changes to auto-sync!
           (window.ethereum as any).on("accountsChanged", async (newAccounts: string[]) => {
-            if (newAccounts.length === 0) {
+            if (!newAccounts || newAccounts.length === 0) {
               set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
             } else {
-              const newBal = await provider.getBalance(newAccounts[0]);
-              set((s) => ({
-                wallet: {
-                  ...s.wallet,
-                  address: newAccounts[0],
-                  balanceMatic: Number(ethers.formatEther(newBal)),
-                },
-              }));
+              try {
+                const newBal = await provider.getBalance(newAccounts[0]);
+                set((s) => ({
+                  wallet: {
+                    ...s.wallet,
+                    address: newAccounts[0],
+                    balanceMatic: Number(ethers.formatEther(newBal)),
+                    status: "connected",
+                  },
+                }));
+              } catch (err) {
+                set((s) => ({
+                  wallet: {
+                    ...s.wallet,
+                    address: newAccounts[0],
+                    status: "connected",
+                  },
+                }));
+              }
             }
           });
           
