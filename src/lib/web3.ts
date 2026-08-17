@@ -177,15 +177,17 @@ export async function fetchAllListingsFromChain() {
           metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
         } else {
           const gateways = [
+            `/api/ipfs/metadata?cid=${cid}`,
+            `https://gateway.pinata.cloud/ipfs/${cid}`,
+            `https://cloudflare-ipfs.com/ipfs/${cid}`,
             `https://dweb.link/ipfs/${cid}`,
             `https://ipfs.io/ipfs/${cid}`,
-            `https://gateway.pinata.cloud/ipfs/${cid}`
           ];
           
           try {
             metadata = await Promise.any(
               gateways.map(async (url) => {
-                const res = await fetch(url, { signal: AbortSignal.timeout(3500) });
+                const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
                 if (!res.ok) throw new Error("Gateway failed");
                 return await res.json();
               })

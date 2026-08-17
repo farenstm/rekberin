@@ -51,3 +51,31 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ cid: result.IpfsHash });
 }
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const cid = searchParams.get("cid");
+  if (!cid) {
+    return NextResponse.json({ error: "CID required" }, { status: 400 });
+  }
+
+  const gateways = [
+    `https://gateway.pinata.cloud/ipfs/${cid}`,
+    `https://cloudflare-ipfs.com/ipfs/${cid}`,
+    `https://ipfs.io/ipfs/${cid}`,
+    `https://dweb.link/ipfs/${cid}`,
+  ];
+
+  try {
+    const data = await Promise.any(
+      gateways.map(async (url) => {
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        if (!res.ok) throw new Error("Gateway failed");
+        return await res.json();
+      }),
+    );
+    return NextResponse.json(data);
+  } catch (err) {
+    return NextResponse.json({ error: "Failed to fetch metadata from IPFS" }, { status: 504 });
+  }
+}
