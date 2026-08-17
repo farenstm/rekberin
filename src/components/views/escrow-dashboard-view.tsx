@@ -769,7 +769,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
         <div className="space-y-3">
           <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 flex items-start gap-2.5">
             <AlertTriangle className="size-4 text-warning shrink-0 mt-0.5" />
-            <div className="text-xs text-warning-foreground/90 leading-relaxed">
+            <div className="text-xs text-warning leading-relaxed font-medium">
               Dana <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>{" "}
               sedang di-hold smart contract. Seller sudah konfirmasi pengiriman
               akun. Buyer: konfirmasi penerimaan untuk release dana, atau request

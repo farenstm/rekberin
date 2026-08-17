@@ -176,9 +176,9 @@ export function EditListingView() {
         </div>
 
         {wallet.status !== "connected" && (
-          <div className="mb-6 p-4 rounded-lg border border-warning/30 bg-warning/5 flex items-center gap-3">
+          <div className="mb-6 p-4 rounded-lg border border-warning/30 bg-warning/10 flex items-center gap-3">
             <span className="text-lg">⚠️</span>
-            <div className="text-xs text-warning-foreground/90">
+            <div className="text-xs text-warning font-medium">
               Hubungkan wallet Anda terlebih dahulu untuk mengedit listing.
             </div>
           </div>
