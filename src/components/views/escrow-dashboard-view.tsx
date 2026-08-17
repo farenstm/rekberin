@@ -283,13 +283,6 @@ export function EscrowDashboardView() {
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                   Smart Contract
                 </span>
-                <button
-                  onClick={() => setTransactionsTab("contract-status")}
-                  className="text-[10px] text-primary hover:underline flex items-center gap-1"
-                >
-                  <FileCode2 className="size-3" />
-                  View source
-                </button>
               </div>
               <div className="space-y-2">
                 <ContractRow label="Name" value={`${CONTRACT_INFO.name}.sol`} />
