@@ -319,9 +319,8 @@ export function CreateListingView() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <ChecklistItem ok={!!game} label="Game name" />
-            <ChecklistItem ok={!!tier} label="Tier / Rank" />
-            <ChecklistItem ok={!!title} label="Title" />
-            <ChecklistItem ok={!!description} label="Description" />
+            <ChecklistItem ok={!!tier} label="Tier / Title Akun" />
+            <ChecklistItem ok={!!description} label="Description & Highlights" />
             <ChecklistItem ok={priceNum > 0} label="Price set" />
             <ChecklistItem ok={!!imageFile} label="Preview image" />
             <ChecklistItem
