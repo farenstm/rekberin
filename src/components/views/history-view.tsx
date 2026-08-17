@@ -39,7 +39,7 @@ export function HistoryView() {
   const [filter, setFilter] = useState<EscrowState | "ALL">("ALL");
 
   const userTransactions = useMemo(() => {
-    if (wallet.status !== "connected") return [];
+    if (wallet.status !== "connected" || !wallet.address) return [];
     return transactions.filter(
       (t) =>
         isSameAddress(t.buyer, wallet.address) ||
@@ -48,7 +48,9 @@ export function HistoryView() {
   }, [transactions, wallet]);
 
   const filtered = useMemo(() => {
-    let list = [...userTransactions].sort((a, b) => b.createdAt - a.createdAt);
+    let list = [...userTransactions].sort(
+      (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
+    );
     if (filter !== "ALL") list = list.filter((t) => t.state === filter);
     return list;
   }, [userTransactions, filter]);
