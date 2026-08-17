@@ -43,8 +43,8 @@ export function HomeView() {
     wallet.status === "connected"
       ? transactions.filter(
           (t) =>
-            t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
-            t.seller.toLowerCase() === wallet.address.toLowerCase()
+            isSameAddress(t.buyer, wallet.address) ||
+            isSameAddress(t.seller, wallet.address)
         )
       : transactions;
 

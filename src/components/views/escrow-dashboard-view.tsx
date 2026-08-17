@@ -32,7 +32,7 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { CONTRACT_INFO } from "@/lib/contract";
-import { cn } from "@/lib/utils";
+import { cn, isSameAddress } from "@/lib/utils";
 import type { EscrowState, EscrowTransaction, Listing } from "@/lib/types";
 import {
   confirmReceiptOnChain,
@@ -65,8 +65,8 @@ export function EscrowDashboardView() {
   // Filter transactions strictly for the current user
   const userTransactions = transactions.filter(
     (t) =>
-      t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
-      t.seller.toLowerCase() === wallet.address.toLowerCase(),
+      isSameAddress(t.buyer, wallet.address) ||
+      isSameAddress(t.seller, wallet.address),
   );
 
   // Default to active escrow if no selection
@@ -632,8 +632,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
   const approveRefund = useEscrowStore((s) => s.approveRefund);
   const rejectRefund = useEscrowStore((s) => s.rejectRefund);
 
-  const isBuyer = wallet.status === "connected" && wallet.address.toLowerCase() === tx.buyer.toLowerCase();
-  const isSeller = wallet.status === "connected" && wallet.address.toLowerCase() === tx.seller.toLowerCase();
+  const isBuyer = wallet.status === "connected" && isSameAddress(wallet.address, tx.buyer);
+  const isSeller = wallet.status === "connected" && isSameAddress(wallet.address, tx.seller);
 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);

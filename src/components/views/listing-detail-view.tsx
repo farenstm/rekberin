@@ -23,6 +23,7 @@ import { CONTRACT_INFO } from "@/lib/contract";
 import { createEscrowOnChain } from "@/lib/web3";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { isSameAddress } from "@/lib/utils";
 
 export function ListingDetailView() {
   const { toast } = useToast();
@@ -234,7 +235,7 @@ export function ListingDetailView() {
                 disabled={
                   listing.status !== "AVAILABLE" ||
                   (wallet.status === "connected" &&
-                    wallet.address.toLowerCase() === listing.seller.toLowerCase()) ||
+                    isSameAddress(wallet.address, listing.seller)) ||
                   isBuying
                 }
                 className="w-full mt-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -242,7 +243,7 @@ export function ListingDetailView() {
                 {isBuying ? (
                   "Memproses Transaksi..."
                 ) : listing.status === "AVAILABLE" ? (
-                  wallet.status === "connected" && wallet.address.toLowerCase() === listing.seller.toLowerCase() ? (
+                  wallet.status === "connected" && isSameAddress(wallet.address, listing.seller) ? (
                     <>
                       <AlertCircle className="size-4" />
                       Milik Anda Sendiri
@@ -262,7 +263,7 @@ export function ListingDetailView() {
               </button>
 
               {/* Edit button */}
-              {listing.status === "AVAILABLE" && wallet.status === "connected" && wallet.address.toLowerCase() === listing.seller.toLowerCase() && (
+              {listing.status === "AVAILABLE" && wallet.status === "connected" && isSameAddress(wallet.address, listing.seller) && (
                 <button
                   onClick={() => useAppStore.getState().openEditListing(listing.id)}
                   className="w-full mt-2 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-12 rounded-lg font-semibold transition-all border border-border"
@@ -272,7 +273,7 @@ export function ListingDetailView() {
               )}
 
               {/* Cancel button */}
-              {listing.status === "AVAILABLE" && wallet.status === "connected" && wallet.address.toLowerCase() === listing.seller.toLowerCase() && (
+              {listing.status === "AVAILABLE" && wallet.status === "connected" && isSameAddress(wallet.address, listing.seller) && (
                 <button
                   onClick={handleCancel}
                   disabled={isCancelling}
