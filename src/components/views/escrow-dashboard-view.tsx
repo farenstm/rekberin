@@ -200,12 +200,12 @@ export function EscrowDashboardView() {
                   <div className="text-base font-semibold">On-chain events</div>
                 </div>
                 <span className="text-[10px] font-mono text-muted-foreground">
-                  {tx.events.length} events
+                  {(tx.events || []).length} events
                 </span>
               </div>
 
               <div className="space-y-2">
-                {tx.events.map((evt, i) => (
+                {(tx.events || []).map((evt, i) => (
                   <EventLogRow key={evt.id} evt={evt} isFirst={i === 0} />
                 ))}
               </div>
@@ -235,7 +235,7 @@ export function EscrowDashboardView() {
               <PartyRow
                 role="Seller"
                 address={tx.seller}
-                label={tx.listing.sellerName}
+                label={tx.listing?.sellerName || "Seller"}
                 icon={User}
                 tone="warning"
               />
@@ -251,7 +251,7 @@ export function EscrowDashboardView() {
               </div>
               <div className="flex items-start gap-3">
                 <div className="relative size-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-2xl border border-border shrink-0 from-indigo-500/20 to-purple-500/20 overflow-hidden">
-                  {tx.listing.imageUrl ? (
+                  {tx.listing?.imageUrl ? (
                     <IPFSImage src={tx.listing.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <span>🎮</span>
@@ -259,18 +259,20 @@ export function EscrowDashboardView() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm line-clamp-1">
-                    {tx.listing.title}
+                    {tx.listing?.title || "Game Account"}
                   </div>
                   <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
-                    {tx.listing.game}
+                    {tx.listing?.game || "Game"}
                   </div>
-                  <button
-                    onClick={() => useAppStore.getState().openListing(tx.listing.id)}
-                    className="mt-1.5 flex items-center gap-1 text-[10px] text-primary hover:underline"
-                  >
-                    View listing
-                    <ExternalLink className="size-2.5" />
-                  </button>
+                  {tx.listing?.id && (
+                    <button
+                      onClick={() => useAppStore.getState().openListing(tx.listing.id)}
+                      className="mt-1.5 flex items-center gap-1 text-[10px] text-primary hover:underline"
+                    >
+                      View listing
+                      <ExternalLink className="size-2.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -355,7 +357,8 @@ function getStatusNarrative(state: EscrowState): {
 
 // ============= Sub-components =============
 
-function SellerContactsCard({ listing }: { listing: Listing }) {
+function SellerContactsCard({ listing }: { listing?: Listing }) {
+  if (!listing) return null;
   const hasAnyContact = listing.discord || listing.telegram || listing.whatsapp;
   if (!hasAnyContact) return null;
 
@@ -877,7 +880,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
           <CheckCircle2 className="size-4 text-success shrink-0 mt-0.5" />
           <div className="text-xs text-success-foreground/90 leading-relaxed">
             Pembayaran berhasil diteruskan kepada penjual. Transaksi {tx.id}
-            {" "}telah selesai dan listing &ldquo;{tx.listing.title}&rdquo; ({tx.listing.id})
+            {" "}telah selesai dan listing &ldquo;{tx.listing?.title || tx.id}&rdquo; ({tx.listing?.id || tx.id})
             {" "}ditandai sebagai terjual.
           </div>
         </div>
@@ -887,7 +890,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-2.5">
           <XCircle className="size-4 text-destructive shrink-0 mt-0.5" />
           <div className="text-xs text-destructive-foreground/90 leading-relaxed">
-            Dana dikembalikan ke buyer. Listing {tx.listing.id} kembali AVAILABLE
+            Dana dikembalikan ke buyer. Listing {tx.listing?.id || tx.id} kembali AVAILABLE
             di marketplace.
           </div>
         </div>

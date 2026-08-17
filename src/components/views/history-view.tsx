@@ -135,7 +135,7 @@ export function HistoryView() {
                   {/* Left: ID + listing */}
                   <div className="flex items-start gap-3 min-w-0 flex-1">
                     <div className="relative size-11 rounded-lg border border-border shrink-0">
-                      {tx.listing.imageUrl ? (
+                      {tx.listing?.imageUrl ? (
                         <IPFSImage
                           src={tx.listing.imageUrl}
                           alt="preview"
@@ -153,10 +153,10 @@ export function HistoryView() {
                         <StateBadge state={tx.state} size="sm" />
                       </div>
                       <div className="text-sm text-foreground/90 line-clamp-1">
-                        {tx.listing.title}
+                        {tx.listing?.title || "Game Account"}
                       </div>
                       <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-muted-foreground">
-                        <span>{tx.listing.game}</span>
+                        <span>{tx.listing?.game || "Game"}</span>
                         <span>•</span>
                         <span>{formatDate(tx.createdAt)}</span>
                       </div>
