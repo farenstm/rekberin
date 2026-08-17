@@ -456,24 +456,18 @@ function ContractRow({ label, value }: { label: string; value: string }) {
 }
 
 function FSMCompactView({ state }: { state: EscrowState }) {
-  // Two paths:
-  // Release: DEPOSITED → HELD → RELEASED
-  // Refund:  DEPOSITED → HELD → REFUND_REQUESTED → REFUNDED
-  const isRefundPath =
-    state === "REFUND_REQUESTED" ||
-    state === "REFUNDED";
+  const isRefundPath = state === "REFUND_REQUESTED" || state === "REFUNDED";
 
   if (isRefundPath) {
-    const labels = ["Deposit", "Hold", "Refund Req", state === "REFUNDED" ? "Refunded" : ""];
-    const stateIdx = state === "REFUNDED" ? 3 : 2;
+    const labels = ["Held", "Refund Req", state === "REFUNDED" ? "Refunded" : ""];
+    const stateIdx = state === "REFUNDED" ? 2 : 1;
     return (
       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/30 border border-border/50">
         {labels.map((label, i) => {
           if (!label) return null;
           const done = i < stateIdx;
           const active = i === stateIdx && !done;
-          const tone =
-            i === 2 ? "orange-400" : i === 3 ? "destructive" : i === 0 ? "info" : "warning";
+          const tone = i === 1 ? "orange-400" : i === 2 ? "destructive" : "warning";
           return (
             <div key={label} className="flex items-center gap-1.5">
               {i > 0 && (
@@ -505,16 +499,15 @@ function FSMCompactView({ state }: { state: EscrowState }) {
   }
 
   // Release path
-  const order: EscrowState[] = ["DEPOSITED", "HELD", "RELEASED"];
-  const stateIdx = order.indexOf(state);
-  const labels = ["Deposit", "Hold", "Release"];
+  const labels = ["Held", "Release"];
+  const stateIdx = state === "RELEASED" ? 1 : 0;
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/30 border border-border/50">
       {labels.map((label, i) => {
         const done = i < stateIdx || state === "RELEASED";
         const active = i === stateIdx && !done;
-        const tone = i === 0 ? "info" : i === 1 ? "warning" : "success";
+        const tone = i === 0 ? "warning" : "success";
         return (
           <div key={label} className="flex items-center gap-1.5">
             {i > 0 && (
@@ -626,7 +619,7 @@ function getEventTone(event: string): string {
 
 function ActionPanel({ tx }: { tx: EscrowTransaction }) {
   const wallet = useWalletStore((s) => s.wallet);
-  const confirmReceived = useEscrowStore((s) => s.confirmReceived);
+  const confirmReceipt = useEscrowStore((s) => s.confirmReceipt || s.confirmReceived);
   const requestRefund = useEscrowStore((s) => s.requestRefund);
   const approveRefund = useEscrowStore((s) => s.approveRefund);
   const rejectRefund = useEscrowStore((s) => s.rejectRefund);
@@ -639,12 +632,12 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
 
   const txNum = parseInt(tx.id.replace(/\D/g, ""), 10);
 
-  const handleConfirmReceived = async () => {
+  const handleConfirmReceipt = async () => {
     if (!window.confirm("Release dana ke seller? Pastikan Anda sudah menerima akun dan login berhasil.")) return;
     try {
       setIsLoading("confirm");
       const receipt = await confirmReceiptOnChain(txNum);
-      confirmReceived(tx.id, receipt.hash, receipt.blockNumber);
+      confirmReceipt(tx.id, receipt.hash, receipt.blockNumber);
       toast({
         title: "Dana Berhasil Dilepas!",
         description: "Transaksi selesai. Dana telah dikirimkan ke wallet seller.",
@@ -787,7 +780,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
           {isBuyer && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <button
-                onClick={handleConfirmReceived}
+                onClick={handleConfirmReceipt}
                 disabled={isLoading !== null}
                 className="flex items-center justify-center gap-2 h-11 rounded-lg bg-success text-success-foreground hover:bg-success/90 text-sm font-semibold transition-all disabled:opacity-50"
               >

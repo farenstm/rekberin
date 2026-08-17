@@ -30,8 +30,8 @@ export async function switchNetworkToAmoy() {
               chainName: "Polygon Amoy Testnet",
               rpcUrls: ["https://polygon-amoy.drpc.org"],
               nativeCurrency: {
-                name: "MATIC",
-                symbol: "MATIC",
+                name: "POL",
+                symbol: "POL",
                 decimals: 18,
               },
               blockExplorerUrls: ["https://amoy.polygonscan.com/"],
@@ -101,9 +101,9 @@ export async function createEscrowOnChain(listingId: number, priceMatic: number)
 
   if (balanceWei <= priceWei) {
     throw new Error(
-      `Saldo tidak mencukupi. Harga listing ${ethers.formatEther(priceWei)} MATIC, ` +
-      `sedangkan saldo Anda ${Number(ethers.formatEther(balanceWei)).toFixed(4)} MATIC. ` +
-      "Tambahkan test MATIC untuk harga listing dan biaya gas.",
+      `Saldo tidak mencukupi. Harga listing ${ethers.formatEther(priceWei)} POL, ` +
+      `sedangkan saldo Anda ${Number(ethers.formatEther(balanceWei)).toFixed(4)} POL. ` +
+      "Tambahkan test POL untuk harga listing dan biaya gas.",
     );
   }
 

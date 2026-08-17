@@ -138,7 +138,7 @@ export function WalletButton() {
                   Balance
                 </span>
                 <span className="font-mono-num text-sm font-semibold text-primary">
-                  {wallet.balanceMatic.toFixed(4)} MATIC
+                  {wallet.balanceMatic.toFixed(4)} POL
                 </span>
               </div>
             </div>

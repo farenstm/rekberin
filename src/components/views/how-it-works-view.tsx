@@ -75,23 +75,23 @@ export function HowItWorksView() {
           <FlowStep
             num={2}
             icon={ShoppingCart}
-            title="Buyer membeli"
-            description="Buyer browse marketplace, pilih listing, klik Buy Now. MetaMask muncul. Buyer approve transaksi createEscrow() dengan amount = price. Dana terkirim ke smart contract."
+            title="Buyer membuat Escrow"
+            description="Buyer browse marketplace, pilih listing, klik Buy Now. Buyer approve transaksi createEscrow() dengan amount = price. Dana terkirim ke smart contract dan state langsung menjadi HELD."
             actor="Buyer"
             tone="info"
             contractCall="createEscrow(listingId) {value: price}"
           />
-          <FlowArrow label="State: NONE → DEPOSITED" />
+          <FlowArrow label="State: NONE → HELD" />
           <FlowStep
             num={3}
             icon={Lock}
-            title="Smart Contract menahan dana"
-            description="Dana masuk ke smart contract EscrowChain. State berubah menjadi DEPOSITED. Seller melihat notifikasi: 'Buyer sudah deposit, silakan kirim akun'. Seller konfirmasi via confirmHold()."
+            title="Smart Contract menahan dana (HELD)"
+            description="Dana dikunci secara aman di dalam smart contract EscrowChain. Seller melihat notifikasi bahwa buyer sudah deposit dan siap mengirimkan kredensial akun."
             actor="Smart Contract"
             tone="warning"
-            contractCall="confirmHold(escrowId)"
+            contractCall="escrow.state = HELD"
           />
-          <FlowArrow label="State: DEPOSITED → HELD" />
+          <FlowArrow label="Dana dikunci di Smart Contract" />
           <FlowStep
             num={4}
             icon={Send}
@@ -99,17 +99,17 @@ export function HowItWorksView() {
             description="Seller menghubungi buyer via Discord/Telegram/WhatsApp (yang tertera di listing). Seller memberikan kredensial akun langsung ke buyer. Serah terima ini terjadi OFF-CHAIN — di luar smart contract."
             actor="Seller"
             tone="warning"
-            contractCall="— off-chain —"
+            contractCall="— off-chain delivery —"
           />
-          <FlowArrow label="Buyer menerima akun" />
+          <FlowArrow label="Buyer menerima & verifikasi akun" />
           <FlowStep
             num={5}
             icon={CheckCircle2}
-            title="Buyer konfirmasi"
-            description="Buyer login ke akun, verifikasi semua sesuai deskripsi. Buyer klik 'Akun Sudah Diterima' di dashboard. MetaMask muncul untuk approve confirmReceived()."
+            title="Buyer konfirmasi penerimaan"
+            description="Buyer login ke akun, verifikasi semua sesuai deskripsi. Buyer klik 'Akun Sudah Diterima' di dashboard. Transaksi confirmReceipt() memicu pelepasan dana."
             actor="Buyer"
             tone="success"
-            contractCall="confirmReceived(escrowId)"
+            contractCall="confirmReceipt(escrowId)"
           />
           <FlowArrow label="State: HELD → RELEASED" />
           <FlowStep
@@ -132,11 +132,11 @@ export function HowItWorksView() {
               Alternate Path — Buyer Request Refund
             </span>
             <h2 className="text-xl md:text-2xl font-bold mt-2">
-              Alur refund (3 langkah tambahan)
+              Alur refund (3 langkah)
             </h2>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto mt-2">
               Kalau buyer tidak puas / tidak menerima akun, bisa request refund
-              selama state HELD. Refund butuh approval seller.
+              selama state HELD. Refund membutuhkan approval dari seller.
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export function HowItWorksView() {
               num="R1"
               icon={AlertCircle}
               title="Buyer request refund"
-              description="Buyer klik 'Request Refund' di escrow dashboard. Smart contract mencatat permintaan refund. State berubah dari HELD → REFUND_REQUESTED. Seller mendapat notifikasi."
+              description="Buyer klik 'Request Refund' di escrow dashboard. Smart contract mencatat permintaan refund. State berubah dari HELD → REFUND_REQUESTED."
               actor="Buyer"
               tone="refund-req"
               contractCall="requestRefund(escrowId)"
@@ -155,7 +155,7 @@ export function HowItWorksView() {
               num="R2"
               icon={RotateCcw}
               title="Seller approve / reject refund"
-              description="Seller login, lihat detail request refund. Seller bisa: (a) Approve — setuju refund, atau (b) Reject — menolak, escrow kembali ke HELD untuk negosiasi."
+              description="Seller login, lihat detail request refund. Seller bisa: (a) Approve — setuju refund (state → REFUNDED), atau (b) Reject — menolak (state kembali → HELD)."
               actor="Seller"
               tone="refund-req"
               contractCall="approveRefund(escrowId) | rejectRefund(escrowId)"
@@ -168,7 +168,7 @@ export function HowItWorksView() {
               num="R3"
               icon={XCircle}
               title="Dana dikembalikan ke buyer"
-              description="Kalau approve: smart contract otomatis kirim dana kembali ke wallet buyer. State → REFUNDED. Listing kembali AVAILABLE di marketplace. Transaksi selesai (gagal)."
+              description="Jika seller approve: smart contract otomatis mengirim dana kembali ke wallet buyer. State → REFUNDED. Transaksi selesai."
               actor="Smart Contract"
               tone="destructive"
               contractCall="buyer.call{value: amount}"
@@ -191,35 +191,33 @@ export function HowItWorksView() {
         <div className="rounded-2xl border border-border bg-card p-6 md:p-8 card-elevated">
           <pre className="text-xs md:text-sm font-mono leading-relaxed overflow-x-auto">
             <code>
-              <span className="text-muted-foreground">                    ┌─── deposit() ───▶ </span>
-              <span className="text-info">DEPOSITED</span>
-              <span className="text-muted-foreground"> ── hold() ──▶ </span>
+              <span className="text-muted-foreground">                    ┌─── createEscrow() ───▶ </span>
               <span className="text-warning">HELD</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    │</span>
+              <span className="text-muted-foreground">                    │                          │</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    ├── </span>
-              <span className="text-success">confirmReceived()</span>
+              <span className="text-muted-foreground">                    │                          ├── </span>
+              <span className="text-success">confirmReceipt()</span>
               <span className="text-muted-foreground"> ──▶ </span>
               <span className="text-success">RELEASED</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    │</span>
+              <span className="text-muted-foreground">                    │                          │</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    └── </span>
+              <span className="text-muted-foreground">                    │                          └── </span>
               <span className="text-orange-400">requestRefund()</span>
               <span className="text-muted-foreground"> ──▶ </span>
               <span className="text-orange-400">REFUND_REQUESTED</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                                         │</span>
+              <span className="text-muted-foreground">                    │                                               │</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    ┌── </span>
+              <span className="text-muted-foreground">                    │                                          ┌──── </span>
               <span className="text-destructive">approveRefund()</span>
               <span className="text-muted-foreground"> ──▶ </span>
               <span className="text-destructive">REFUNDED</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    │</span>
+              <span className="text-muted-foreground">                    │                                          │</span>
               {"\n"}
-              <span className="text-muted-foreground">                    │                                    └── </span>
+              <span className="text-muted-foreground">                    │                                          └── </span>
               <span className="text-warning">rejectRefund()</span>
               <span className="text-muted-foreground"> ──▶ </span>
               <span className="text-warning">HELD</span>

@@ -43,7 +43,7 @@ export function CreateListingView() {
   const [publishStep, setPublishStep] = useState<string>("");
 
   const priceNum = parseInt(priceIDR.replace(/\D/g, ""), 10) || 0;
-  const priceMatic = priceNum / 6200; // ~ Rp6.200 / MATIC (Market price)
+  const priceMatic = priceNum / 6200; // ~ Rp6.200 / POL (Market price)
 
   const canPublish =
     game.trim() &&
@@ -233,9 +233,9 @@ export function CreateListingView() {
                 className="input font-mono-num"
               />
             </Field>
-            <Field label="Equivalent (MATIC)" hint="Otomatis dihitung">
+            <Field label="Equivalent (POL)" hint="Otomatis dihitung">
               <div className="input bg-muted/20 flex items-center text-muted-foreground font-mono-num">
-                {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} MATIC` : "—"}
+                {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} POL` : "—"}
               </div>
             </Field>
           </div>

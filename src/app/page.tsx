@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useAppStore, useListingsStore, useEscrowStore } from "@/lib/store";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -13,6 +13,10 @@ import { TransactionsView } from "@/components/views/transactions-view";
 import { HowItWorksView } from "@/components/views/how-it-works-view";
 import { AboutView } from "@/components/views/about-view";
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export default function Home() {
   const view = useAppStore((s) => s.view);
   const syncListings = useListingsStore((s) => s.syncListings);
@@ -20,10 +24,9 @@ export default function Home() {
   const isSyncingListings = useListingsStore((s) => s.isSyncing);
   const isSyncingEscrows = useEscrowStore((s) => s.isSyncing);
   const hasSynced = useRef(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    setMounted(true);
     if (!hasSynced.current) {
       hasSynced.current = true;
       syncListings().then(() => syncEscrows());

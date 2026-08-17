@@ -232,6 +232,8 @@ interface EscrowStore {
   /** Buyer initiate purchase — NONE → HELD */
   createEscrow: (listing: Listing, buyer: string, onChainId: number, txHash: string, blockNumber: number) => string;
   /** Buyer confirms receipt — HELD → RELEASED */
+  confirmReceipt: (txId: string, txHash: string, blockNumber: number) => void;
+  /** Legacy alias for confirmReceipt */
   confirmReceived: (txId: string, txHash: string, blockNumber: number) => void;
   /** Buyer requests refund — HELD → REFUND_REQUESTED (menunggu approval seller) */
   requestRefund: (txId: string, txHash: string, blockNumber: number) => void;
@@ -283,250 +285,243 @@ export const useEscrowStore = create<EscrowStore>()(
       },
       getHistory: () =>
         [...get().transactions].sort((a, b) => b.createdAt - a.createdAt),
-  createEscrow: (listing, buyer, onChainId, txHash, blockNumber) => {
-    const id = `#${onChainId}`;
-    const now = Date.now();
-    const createdEvent = makeEvent(id, "EscrowCreated", buyer, txHash, blockNumber, {
-      amount: `${listing.priceMatic} MATIC`,
-      listingId: listing.id,
-    });
-    const depositEvent = makeEvent(id, "Deposited", buyer, txHash, blockNumber, {
-      amount: `${listing.priceMatic} MATIC`,
-    });
-    const heldEvent = makeEvent(id, "Held", buyer, txHash, blockNumber, {
-      amount: `${listing.priceMatic} MATIC`,
-    });
-    const tx: EscrowTransaction = {
-      id,
-      listingId: listing.id,
-      listing,
-      buyer,
-      seller: listing.seller,
-      amountMatic: listing.priceMatic,
-      amountIDR: listing.priceIDR,
-      state: "HELD",
-      currentStateLabel: "HELD",
-      createdAt: now,
-      updatedAt: now,
-      depositTxHash: depositEvent.txHash,
-      holdTxHash: depositEvent.txHash,
-      events: [createdEvent, depositEvent, heldEvent],
-      buyerConfirmedReceipt: false,
-      sellerConfirmedDelivery: true, // Auto true because no longer needed
-    };
-    useListingsStore.getState().updateListingStatus(listing.id, "LOCKED");
-    set((s) => ({ transactions: [tx, ...s.transactions] }));
-    return id;
-  },
-  confirmReceived: (txId, txHash, blockNumber) => {
-    set((s) => ({
-      transactions: s.transactions.map((t) => {
-        if (t.id !== txId) return t;
-        if (t.state !== "HELD") return t;
-        const evt = makeEvent(
-          txId,
-          "Released",
-          t.buyer,
-          txHash,
-          blockNumber,
-          { amount: `${t.amountMatic} MATIC`, buyer: t.buyer },
-        );
-        useListingsStore.getState().updateListingStatus(t.listingId, "SOLD");
-        return {
-          ...t,
-          state: "RELEASED" as EscrowState,
-          currentStateLabel: "RELEASED",
-          buyerConfirmedReceipt: true,
-          releaseTxHash: evt.txHash,
-          updatedAt: Date.now(),
-          events: [...t.events, evt],
-        };
-      }),
-    }));
-  },
-  requestRefund: (txId, txHash, blockNumber) => {
-    set((s) => ({
-      transactions: s.transactions.map((t) => {
-        if (t.id !== txId) return t;
-        if (t.state !== "HELD") return t;
-        const evt = makeEvent(
-          txId,
-          "RefundRequested",
-          t.buyer,
-          txHash,
-          blockNumber,
-          { amount: `${t.amountMatic} MATIC`, reason: "Buyer request refund" },
-        );
-        return {
-          ...t,
-          state: "REFUND_REQUESTED" as EscrowState,
-          currentStateLabel: "REFUND_REQUESTED",
-          updatedAt: Date.now(),
-          events: [...t.events, evt],
-        };
-      }),
-    }));
-  },
-  approveRefund: (txId, txHash, blockNumber) => {
-    set((s) => ({
-      transactions: s.transactions.map((t) => {
-        if (t.id !== txId) return t;
-        if (t.state !== "REFUND_REQUESTED") return t;
-        const approvedEvt = makeEvent(
-          txId,
-          "RefundApproved",
-          t.seller,
-          txHash,
-          blockNumber,
-          { seller: t.listing.sellerName },
-        );
-        const refundedEvt = makeEvent(
-          txId,
-          "Refunded",
-          t.seller,
-          txHash,
-          blockNumber,
-          { amount: `${t.amountMatic} MATIC`, to: t.buyer },
-        );
-        useListingsStore.getState().updateListingStatus(t.listingId, "AVAILABLE");
-        return {
-          ...t,
-          state: "REFUNDED" as EscrowState,
-          currentStateLabel: "REFUNDED",
-          refundTxHash: refundedEvt.txHash,
-          updatedAt: Date.now(),
-          events: [...t.events, approvedEvt, refundedEvt],
-        };
-      }),
-    }));
-  },
-  rejectRefund: (txId, txHash, blockNumber) => {
-    set((s) => ({
-      transactions: s.transactions.map((t) => {
-        if (t.id !== txId) return t;
-        if (t.state !== "REFUND_REQUESTED") return t;
-        const evt = makeEvent(
-          txId,
-          "RefundRejected",
-          t.seller,
-          txHash,
-          blockNumber,
-          { seller: t.listing.sellerName, reason: "Seller rejected refund" },
-        );
-        return {
-          ...t,
-          state: "HELD" as EscrowState,
+      createEscrow: (listing, buyer, onChainId, txHash, blockNumber) => {
+        const id = `#${onChainId}`;
+        const now = Date.now();
+        const createdEvent = makeEvent(id, "EscrowCreated", buyer, txHash, blockNumber, {
+          amount: `${listing.priceMatic} POL`,
+          listingId: listing.id,
+        });
+        const depositEvent = makeEvent(id, "Deposited", buyer, txHash, blockNumber, {
+          amount: `${listing.priceMatic} POL`,
+        });
+        const heldEvent = makeEvent(id, "Held", buyer, txHash, blockNumber, {
+          amount: `${listing.priceMatic} POL`,
+        });
+        const tx: EscrowTransaction = {
+          id,
+          listingId: listing.id,
+          listing,
+          buyer,
+          seller: listing.seller,
+          amountMatic: listing.priceMatic,
+          amountIDR: listing.priceIDR,
+          state: "HELD",
           currentStateLabel: "HELD",
-          updatedAt: Date.now(),
-          events: [...t.events, evt],
+          createdAt: now,
+          updatedAt: now,
+          depositTxHash: depositEvent.txHash,
+          holdTxHash: depositEvent.txHash,
+          events: [createdEvent, depositEvent, heldEvent],
+          buyerConfirmedReceipt: false,
+          sellerConfirmedDelivery: true, // Auto true because no longer needed
         };
-      }),
-    }));
-  },
-  syncEscrows: async () => {
-    set({ isSyncing: true });
-    try {
-      const { fetchAllEscrowsFromChain } = await import("./web3");
-      const onChainEscrows = await fetchAllEscrowsFromChain();
-      
-      // Merge listing info into escrows
-      const { useListingsStore } = await import("./store");
-      
-      const listings = useListingsStore.getState().listings;
-      const persistedTransactions = get().transactions;
-      
-      const enrichedEscrows = onChainEscrows.map((e: any) => {
-        const listing = listings.find((l) => l.id === e.listingId);
+        useListingsStore.getState().updateListingStatus(listing.id, "LOCKED");
+        set((s) => ({ transactions: [tx, ...s.transactions] }));
+        return id;
+      },
+      confirmReceipt: (txId, txHash, blockNumber) => {
+        set((s) => ({
+          transactions: s.transactions.map((t) => {
+            if (t.id !== txId) return t;
+            if (t.state !== "HELD") return t;
+            const evt = makeEvent(
+              txId,
+              "Released",
+              t.buyer,
+              txHash,
+              blockNumber,
+              { amount: `${t.amountMatic} POL`, buyer: t.buyer },
+            );
+            useListingsStore.getState().updateListingStatus(t.listingId, "SOLD");
+            return {
+              ...t,
+              state: "RELEASED" as EscrowState,
+              currentStateLabel: "RELEASED",
+              buyerConfirmedReceipt: true,
+              releaseTxHash: evt.txHash,
+              updatedAt: Date.now(),
+              events: [...t.events, evt],
+            };
+          }),
+        }));
+      },
+      confirmReceived: (txId, txHash, blockNumber) => {
+        get().confirmReceipt(txId, txHash, blockNumber);
+      },
+      requestRefund: (txId, txHash, blockNumber) => {
+        set((s) => ({
+          transactions: s.transactions.map((t) => {
+            if (t.id !== txId) return t;
+            if (t.state !== "HELD") return t;
+            const evt = makeEvent(
+              txId,
+              "RefundRequested",
+              t.buyer,
+              txHash,
+              blockNumber,
+              { amount: `${t.amountMatic} POL`, reason: "Buyer request refund" },
+            );
+            return {
+              ...t,
+              state: "REFUND_REQUESTED" as EscrowState,
+              currentStateLabel: "REFUND_REQUESTED",
+              updatedAt: Date.now(),
+              events: [...t.events, evt],
+            };
+          }),
+        }));
+      },
+      approveRefund: (txId, txHash, blockNumber) => {
+        set((s) => ({
+          transactions: s.transactions.map((t) => {
+            if (t.id !== txId) return t;
+            if (t.state !== "REFUND_REQUESTED") return t;
+            const approvedEvt = makeEvent(
+              txId,
+              "RefundApproved",
+              t.seller,
+              txHash,
+              blockNumber,
+              { seller: t.listing.sellerName },
+            );
+            const refundedEvt = makeEvent(
+              txId,
+              "Refunded",
+              t.seller,
+              txHash,
+              blockNumber,
+              { amount: `${t.amountMatic} POL`, to: t.buyer },
+            );
+            useListingsStore.getState().updateListingStatus(t.listingId, "AVAILABLE");
+            return {
+              ...t,
+              state: "REFUNDED" as EscrowState,
+              currentStateLabel: "REFUNDED",
+              refundTxHash: refundedEvt.txHash,
+              updatedAt: Date.now(),
+              events: [...t.events, approvedEvt, refundedEvt],
+            };
+          }),
+        }));
+      },
+      rejectRefund: (txId, txHash, blockNumber) => {
+        set((s) => ({
+          transactions: s.transactions.map((t) => {
+            if (t.id !== txId) return t;
+            if (t.state !== "REFUND_REQUESTED") return t;
+            const evt = makeEvent(
+              txId,
+              "RefundRejected",
+              t.seller,
+              txHash,
+              blockNumber,
+              { seller: t.listing.sellerName, reason: "Seller rejected refund" },
+            );
+            return {
+              ...t,
+              state: "HELD" as EscrowState,
+              currentStateLabel: "HELD",
+              updatedAt: Date.now(),
+              events: [...t.events, evt],
+            };
+          }),
+        }));
+      },
+      syncEscrows: async () => {
+        set({ isSyncing: true });
+        try {
+          const { fetchAllEscrowsFromChain } = await import("./web3");
+          const onChainEscrows = await fetchAllEscrowsFromChain();
+          
+          const listings = useListingsStore.getState().listings;
+          const persistedTransactions = get().transactions;
+          
+          const enrichedEscrows = onChainEscrows.map((e: any) => {
+            const listing = listings.find((l) => l.id === e.listingId);
 
-        // Use real on-chain hashes fetched live from Polygon Amoy events (never use stale persisted fake hashes)
-        const createTx: string | null = e._realCreateTx ?? null;
-        const createBlock: number = e._realCreateBlock ?? 0;
-        const stateTx: string | null = e._realStateTx ?? null;
-        const stateBlock: number = e._realStateBlock ?? (createBlock + 10);
+            const createTx: string | null = e._realCreateTx ?? null;
+            const createBlock: number = e._realCreateBlock ?? 0;
+            const stateTx: string | null = e._realStateTx ?? null;
+            const stateBlock: number = e._realStateBlock ?? (createBlock + 10);
 
-        const finalDepositTx = createTx;
-        const finalHoldTx = createTx;
-        let finalReleaseTx: string | null = null;
-        let finalRefundTx: string | null = null;
+            const finalDepositTx = createTx;
+            const finalHoldTx = createTx;
+            let finalReleaseTx: string | null = null;
+            let finalRefundTx: string | null = null;
 
-        const finalEvents: ReturnType<typeof makeEvent>[] = [];
+            const finalEvents: ReturnType<typeof makeEvent>[] = [];
 
-        if (createTx) {
-          finalEvents.push(
-            makeEvent(e.id, "EscrowCreated", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC`, listingId: e.listingId }),
-            makeEvent(e.id, "Deposited", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC` }),
-            makeEvent(e.id, "Held", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC` })
-          );
+            if (createTx) {
+              finalEvents.push(
+                makeEvent(e.id, "EscrowCreated", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} POL`, listingId: e.listingId }),
+                makeEvent(e.id, "Deposited", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} POL` }),
+                makeEvent(e.id, "Held", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} POL` })
+              );
+            }
+
+            if (e.state === "RELEASED" && stateTx) {
+              finalReleaseTx = stateTx;
+              finalEvents.push(makeEvent(e.id, "Released", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} POL`, buyer: e.buyer }));
+            } else if (e.state === "REFUND_REQUESTED" && stateTx) {
+              finalEvents.push(makeEvent(e.id, "RefundRequested", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} POL`, reason: "Buyer request refund" }));
+            } else if (e.state === "REFUNDED" && stateTx) {
+              finalRefundTx = stateTx;
+              finalEvents.push(
+                makeEvent(e.id, "RefundRequested", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} POL`, reason: "Buyer request refund" }),
+                makeEvent(e.id, "RefundApproved", e.seller, stateTx, stateBlock + 5, { seller: e.seller }),
+                makeEvent(e.id, "Refunded", e.seller, stateTx, stateBlock + 5, { amount: `${e.amountMatic} POL`, to: e.buyer })
+              );
+            }
+
+            return {
+              ...e,
+              events: finalEvents,
+              depositTxHash: finalDepositTx,
+              holdTxHash: finalHoldTx,
+              releaseTxHash: finalReleaseTx,
+              refundTxHash: finalRefundTx,
+              listing: listing || {
+                id: e.listingId,
+                title: "Unknown Listing",
+                game: "Unknown",
+                priceMatic: e.amountMatic,
+                priceIDR: e.amountIDR,
+                seller: e.seller,
+                sellerName: "Unknown",
+                imageUrl: "",
+                status: "SOLD",
+              } as any,
+            };
+          });
+
+          const mergedTransactions = [...persistedTransactions];
+          
+          enrichedEscrows.forEach((enriched: any) => {
+            const index = mergedTransactions.findIndex((t) => t.id === enriched.id);
+            if (index !== -1) {
+              const localTx = mergedTransactions[index];
+              mergedTransactions[index] = {
+                ...(enriched as EscrowTransaction),
+                events: enriched.events.length > 0 ? enriched.events : localTx.events,
+                depositTxHash: enriched.depositTxHash || localTx.depositTxHash,
+                holdTxHash: enriched.holdTxHash || localTx.holdTxHash,
+                releaseTxHash: enriched.releaseTxHash || localTx.releaseTxHash,
+                refundTxHash: enriched.refundTxHash || localTx.refundTxHash,
+              };
+            } else {
+              mergedTransactions.push(enriched as EscrowTransaction);
+            }
+          });
+
+          mergedTransactions.sort((a, b) => b.createdAt - a.createdAt);
+
+          set({ transactions: mergedTransactions, isSyncing: false });
+        } catch (err) {
+          console.error("Failed to sync escrows", err);
+          set({ isSyncing: false });
         }
-
-        if (e.state === "RELEASED" && stateTx) {
-          finalReleaseTx = stateTx;
-          finalEvents.push(makeEvent(e.id, "Released", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} MATIC`, buyer: e.buyer }));
-        } else if (e.state === "REFUND_REQUESTED" && stateTx) {
-          finalEvents.push(makeEvent(e.id, "RefundRequested", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} MATIC`, reason: "Buyer request refund" }));
-        } else if (e.state === "REFUNDED" && stateTx) {
-          finalRefundTx = stateTx;
-          finalEvents.push(
-            makeEvent(e.id, "RefundRequested", e.buyer, stateTx, stateBlock, { amount: `${e.amountMatic} MATIC`, reason: "Buyer request refund" }),
-            makeEvent(e.id, "RefundApproved", e.seller, stateTx, stateBlock + 5, { seller: e.seller }),
-            makeEvent(e.id, "Refunded", e.seller, stateTx, stateBlock + 5, { amount: `${e.amountMatic} MATIC`, to: e.buyer })
-          );
-        }
-
-        return {
-          ...e,
-          events: finalEvents,
-          depositTxHash: finalDepositTx,
-          holdTxHash: finalHoldTx,
-          releaseTxHash: finalReleaseTx,
-          refundTxHash: finalRefundTx,
-          listing: listing || {
-            id: e.listingId,
-            title: "Unknown Listing",
-            game: "Unknown",
-            priceMatic: e.amountMatic,
-            priceIDR: e.amountIDR,
-            seller: e.seller,
-            sellerName: "Unknown",
-            imageUrl: "",
-            status: "SOLD",
-          } as any,
-        };
-      });
-
-
-      
-      // Merge with persisted transactions to prevent data loss from stale RPC
-      const mergedTransactions = [...persistedTransactions];
-      
-      enrichedEscrows.forEach((enriched) => {
-        const index = mergedTransactions.findIndex((t) => t.id === enriched.id);
-        if (index !== -1) {
-          // Preserve local events and tx hashes if the RPC failed to fetch them
-          const localTx = mergedTransactions[index];
-          mergedTransactions[index] = {
-            ...(enriched as EscrowTransaction),
-            events: enriched.events.length > 0 ? enriched.events : localTx.events,
-            depositTxHash: enriched.depositTxHash || localTx.depositTxHash,
-            holdTxHash: enriched.holdTxHash || localTx.holdTxHash,
-            releaseTxHash: enriched.releaseTxHash || localTx.releaseTxHash,
-            refundTxHash: enriched.refundTxHash || localTx.refundTxHash,
-          };
-        } else {
-          // New from chain
-          mergedTransactions.push(enriched as EscrowTransaction);
-        }
-      });
-
-      // Sort newest first
-      mergedTransactions.sort((a, b) => b.createdAt - a.createdAt);
-
-      set({ transactions: mergedTransactions, isSyncing: false });
-    } catch (err) {
-      console.error("Failed to sync escrows", err);
-      set({ isSyncing: false });
-    }
-  },
+      },
     }),
     {
       name: "escrowchain-transactions",

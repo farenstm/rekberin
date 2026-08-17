@@ -27,7 +27,7 @@ import type { EscrowState } from "@/lib/types";
 const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
   { value: "ALL", label: "All" },
   { value: "HELD", label: "Held" },
-  { value: "DEPOSITED", label: "Deposited" },
+  { value: "REFUND_REQUESTED", label: "Refund Requested" },
   { value: "RELEASED", label: "Released" },
   { value: "REFUNDED", label: "Refunded" },
 ];
@@ -199,15 +199,17 @@ function StatCard({
 }
 
 function CompactTimeline({ state }: { state: EscrowState }) {
-  const steps = [
-    { label: "Deposit", done: state !== "NONE", active: state === "DEPOSITED" },
-    { label: "Hold", done: ["HELD", "RELEASED", "REFUNDED"].includes(state), active: state === "HELD" },
-    {
-      label: state === "REFUNDED" ? "Refund" : "Release",
-      done: state === "RELEASED" || state === "REFUNDED",
-      active: false,
-    },
-  ];
+  const isRefundPath = state === "REFUND_REQUESTED" || state === "REFUNDED";
+  const steps = isRefundPath
+    ? [
+        { label: "Held", done: true, active: false },
+        { label: "Refund Req", done: true, active: state === "REFUND_REQUESTED" },
+        { label: state === "REFUNDED" ? "Refunded" : "Pending", done: state === "REFUNDED", active: false },
+      ]
+    : [
+        { label: "Held", done: true, active: state === "HELD" },
+        { label: "Release", done: state === "RELEASED", active: false },
+      ];
 
   const isRefunded = state === "REFUNDED";
 
@@ -219,7 +221,7 @@ function CompactTimeline({ state }: { state: EscrowState }) {
             <div
               className={cn(
                 "h-px w-4",
-                s.done ? (isRefunded && s.label === "Refund" ? "bg-destructive" : "bg-success") : "bg-border",
+                s.done ? (isRefunded && s.label === "Refunded" ? "bg-destructive" : "bg-success") : "bg-border",
               )}
             />
           )}
@@ -227,14 +229,14 @@ function CompactTimeline({ state }: { state: EscrowState }) {
             className={cn(
               "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider",
               s.done && !isRefunded && "text-success",
-              s.done && isRefunded && s.label === "Refund" && "text-destructive",
-              s.done && isRefunded && s.label !== "Refund" && "text-success",
+              s.done && isRefunded && s.label === "Refunded" && "text-destructive",
+              s.done && isRefunded && s.label !== "Refunded" && "text-success",
               s.active && "text-warning",
               !s.done && !s.active && "text-muted-foreground/50",
             )}
           >
             {s.done ? (
-              isRefunded && s.label === "Refund" ? (
+              isRefunded && s.label === "Refunded" ? (
                 <XCircle className="size-2.5" />
               ) : (
                 <CheckCircle2 className="size-2.5" />

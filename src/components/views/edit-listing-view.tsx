@@ -45,8 +45,10 @@ export function EditListingView() {
   const [publishing, setPublishing] = useState(false);
   const [publishStep, setPublishStep] = useState<string>("");
 
+  // Form synchronization effect to populate fields when target listing is opened
   useEffect(() => {
     if (listing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync form inputs with active listing data upon view load
       setGame(listing.game);
       setTitle(listing.title);
       setTier(listing.tier);
@@ -67,7 +69,7 @@ export function EditListingView() {
   }
 
   const priceNum = parseInt(priceIDR.replace(/\D/g, ""), 10) || 0;
-  const priceMatic = priceNum / 6200; // ~ Rp6.200 / MATIC (Market price)
+  const priceMatic = priceNum / 6200; // ~ Rp6.200 / POL (Market price)
 
   const canPublish =
     game.trim() &&
@@ -258,9 +260,9 @@ export function EditListingView() {
                 className="input font-mono-num"
               />
             </Field>
-            <Field label="Equivalent (MATIC)" hint="Otomatis dihitung">
+            <Field label="Equivalent (POL)" hint="Otomatis dihitung">
               <div className="input bg-muted/20 flex items-center text-muted-foreground font-mono-num">
-                {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} MATIC` : "—"}
+                {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} POL` : "—"}
               </div>
             </Field>
           </div>

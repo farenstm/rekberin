@@ -69,7 +69,7 @@ const TECH_STACK: TechItem[] = [
     color: "text-orange-400",
   },
   {
-    name: "Solidity 0.8.20",
+    name: "Solidity ^0.8.28",
     category: "Smart Contract Language",
     description:
       "Bahasa pemrograman untuk menulis smart contract di EVM. EscrowChain.sol diimplementasikan dengan Solidity + FSM pattern.",
@@ -80,7 +80,7 @@ const TECH_STACK: TechItem[] = [
     name: "Polygon Amoy Testnet",
     category: "Blockchain Network",
     description:
-      "Testnet Polygon (chainId 80002). Gas fee rendah, cepat, cocok untuk prototype akademik. MATIC sebagai native token.",
+      "Testnet Polygon (chainId 80002). Gas fee rendah, cepat, cocok untuk prototype akademik. POL sebagai native token.",
     icon: Network,
     color: "text-purple-400",
   },
@@ -118,7 +118,7 @@ const ARCHITECTURE_LAYERS = [
   {
     layer: "Blockchain Layer",
     tech: "Polygon Amoy Testnet",
-    desc: "EVM-compatible L2, native MATIC token, fast finality",
+    desc: "EVM-compatible L2, native POL token, fast finality",
   },
 ];
 
@@ -253,9 +253,9 @@ export function AboutView() {
               label="Deploy Block"
               value={`#${CONTRACT_INFO.deployBlock.toLocaleString()}`}
             />
-            <InfoRow label="Solidity Version" value="^0.8.20" />
+            <InfoRow label="Solidity Version" value="^0.8.28" />
             <InfoRow label="License" value="MIT" />
-            <InfoRow label="Functions" value="6 external" />
+            <InfoRow label="Functions" value="8 transactional" />
           </div>
 
           <div className="mt-5 pt-5 border-t border-border/60 flex flex-wrap gap-2">

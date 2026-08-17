@@ -326,20 +326,24 @@ function InfoTab() {
         </p>
 
         <div className="space-y-2 mt-4 pt-4 border-t border-border/60">
-          <InfoRow label="Solidity Version" value="^0.8.20" />
+          <InfoRow label="Solidity Version" value="^0.8.28" />
           <InfoRow label="License" value="MIT" />
           <InfoRow label="Storage Slots" value="6 (estimated)" />
           <InfoRow
             label="Modifiers"
-            value="onlyBuyer, onlySeller, inState"
+            value="onlyBuyer, onlySeller, inState, nonReentrant"
           />
           <InfoRow
             label="External Functions"
-            value="6 (createListing, createEscrow, confirmHold, confirmReceived, requestRefund, getEscrowState)"
+            value="8 transactional (createListing, updateListing, cancelListing, createEscrow, confirmReceipt, requestRefund, approveRefund, rejectRefund)"
+          />
+          <InfoRow
+            label="Read / View Functions"
+            value="2 (getListing, getEscrow)"
           />
           <InfoRow
             label="Events"
-            value="6 (ListingCreated, EscrowCreated, Deposited, Held, Released, Refunded)"
+            value="5 (ListingCreated, ListingUpdated, ListingCancelled, EscrowCreated, EscrowStateChanged)"
           />
         </div>
       </div>
@@ -352,24 +356,24 @@ function InfoTab() {
         </h3>
         <div className="font-mono text-xs space-y-2 p-4 rounded-lg bg-[#0d1117] border border-border/40">
           <div className="text-muted-foreground">
-            <span className="text-warning">NONE</span>{" "}
-            <span className="text-foreground/40">──deposit──▶</span>{" "}
-            <span className="text-info">DEPOSITED</span>
-          </div>
-          <div className="pl-4">
-            <span className="text-info">DEPOSITED</span>{" "}
-            <span className="text-foreground/40">──hold──▶</span>{" "}
-            <span className="text-warning">HELD</span>
-          </div>
-          <div className="pl-8">
             <span className="text-warning">HELD</span>{" "}
-            <span className="text-foreground/40">──release──▶</span>{" "}
+            <span className="text-foreground/40">──confirmReceipt()──▶</span>{" "}
             <span className="text-success">RELEASED</span>
           </div>
-          <div className="pl-8">
+          <div className="pl-4">
             <span className="text-warning">HELD</span>{" "}
-            <span className="text-foreground/40">──refund──▶</span>{" "}
+            <span className="text-foreground/40">──requestRefund()──▶</span>{" "}
+            <span className="text-orange-400">REFUND_REQUESTED</span>
+          </div>
+          <div className="pl-8">
+            <span className="text-orange-400">REFUND_REQUESTED</span>{" "}
+            <span className="text-foreground/40">──approveRefund()──▶</span>{" "}
             <span className="text-destructive">REFUNDED</span>
+          </div>
+          <div className="pl-8">
+            <span className="text-orange-400">REFUND_REQUESTED</span>{" "}
+            <span className="text-foreground/40">──rejectRefund()──▶</span>{" "}
+            <span className="text-warning">HELD (kembali)</span>
           </div>
         </div>
       </div>

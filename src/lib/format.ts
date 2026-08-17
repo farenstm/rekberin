@@ -12,10 +12,13 @@ export function formatIDR(value: number): string {
   }).format(value);
 }
 
-/** Format MATIC dengan 4 desimal */
-export function formatMATIC(value: number): string {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} MATIC`;
+/** Format POL dengan 4 desimal */
+export function formatPOL(value: number): string {
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} POL`;
 }
+
+/** Legacy alias for formatPOL */
+export const formatMATIC = formatPOL;
 
 /** Format address: 0x45aB...6a78 */
 export function shortenAddress(addr: string, head = 6, tail = 4): string {

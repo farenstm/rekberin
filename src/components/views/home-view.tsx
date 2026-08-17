@@ -194,20 +194,12 @@ export function HomeView() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             <FSMNode
               icon={Lock}
-              label="Deposit"
-              state="DEPOSITED"
-              tone="info"
-              desc="Buyer → Contract"
-            />
-            <FSMArrow label="hold()" />
-            <FSMNode
-              icon={Shield}
-              label="Hold"
+              label="Escrow"
               state="HELD"
               tone="warning"
-              desc="Dana dikunci"
+              desc="createEscrow() — Dana dikunci"
             />
-            <FSMArrow label="confirmReceived()" />
+            <FSMArrow label="confirmReceipt()" />
             <FSMNode
               icon={CheckCircle2}
               label="Release"
@@ -309,7 +301,7 @@ export function HomeView() {
                   Smart Contract
                 </span>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Solidity 0.8.20
+                  Solidity ^0.8.28
                 </span>
               </div>
               <h3 className="text-lg font-semibold">

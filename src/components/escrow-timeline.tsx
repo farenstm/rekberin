@@ -54,10 +54,6 @@ const TONE_STYLES = {
 } as const;
 
 export function EscrowTimeline({ tx, variant = "full" }: EscrowTimelineProps) {
-  // Build steps dynamically based on transaction state
-  // Two paths:
-  //   Release path: DEPOSITED → HELD → RELEASED
-  //   Refund path:  DEPOSITED → HELD → REFUND_REQUESTED → REFUNDED
   const steps = buildSteps(tx);
 
   if (variant === "compact") {
@@ -200,40 +196,27 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
     tx.state === "REFUNDED" ||
     tx.events.some((e) => e.event === "RefundRequested");
 
-  // Common first 2 steps
-  const depositStep: TimelineStep = {
-    key: "DEPOSITED",
-    label: "Deposit",
-    description: "Buyer mengirim dana ke smart contract. State: DEPOSITED.",
-    icon: Lock,
-    completed: !!tx.depositTxHash,
-    active: tx.state === "DEPOSITED",
-    tone: "info",
-    txHash: tx.depositTxHash,
-  };
-
   const holdStep: TimelineStep = {
     key: "HELD",
-    label: "Hold",
+    label: "Escrow Held",
     description: isRefundPath
-      ? "Dana ditahan smart contract. Buyer request refund."
-      : "Dana ditahan smart contract, menunggu konfirmasi buyer.",
+      ? "Dana dikunci di smart contract EscrowChain. Permintaan refund diajukan."
+      : "Dana dikunci di smart contract EscrowChain. Menunggu konfirmasi penerimaan akun dari buyer.",
     icon: Shield,
-    completed: !!tx.holdTxHash,
+    completed: true,
     active: tx.state === "HELD",
     tone: "warning",
-    txHash: tx.holdTxHash,
+    txHash: tx.holdTxHash || tx.depositTxHash,
   };
 
   if (!isRefundPath) {
     // Release path
     return [
-      depositStep,
       holdStep,
       {
         key: "RELEASED",
-        label: "Release",
-        description: "Buyer konfirmasi penerimaan akun. Dana dilepas ke seller.",
+        label: "Funds Released",
+        description: "Buyer mengonfirmasi penerimaan akun via confirmReceipt(). Dana dilepas otomatis ke wallet seller.",
         icon: CheckCircle2,
         completed: tx.state === "RELEASED",
         active: false,
@@ -245,13 +228,12 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
 
   // Refund path
   return [
-    depositStep,
     holdStep,
     {
       key: "REFUND_REQUESTED",
       label: "Refund Requested",
       description:
-        "Buyer minta refund. Menunggu approval seller untuk mengembalikan dana.",
+        "Buyer mengajukan refund via requestRefund(). Menunggu keputusan (approve / reject) dari seller.",
       icon: AlertCircle,
       completed: !!refundRequestEvent && tx.state !== "REFUND_REQUESTED",
       active: tx.state === "REFUND_REQUESTED",
@@ -262,7 +244,7 @@ function buildSteps(tx: EscrowTransaction): TimelineStep[] {
       key: "REFUNDED",
       label: "Refunded",
       description:
-        "Seller approve refund. Dana dikembalikan ke buyer. Transaksi selesai.",
+        "Seller menyetujui refund via approveRefund(). Dana dikembalikan otomatis ke wallet buyer.",
       icon: XCircle,
       completed: tx.state === "REFUNDED",
       active: false,

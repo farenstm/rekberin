@@ -30,16 +30,15 @@ export function ContractStatusView() {
 
   // Stats
   const activeEscrows = transactions.filter(
-    (t) => t.state === "HELD" || t.state === "DEPOSITED" || t.state === "REFUND_REQUESTED",
+    (t) => t.state === "HELD" || t.state === "REFUND_REQUESTED",
   );
   const releasedCount = transactions.filter((t) => t.state === "RELEASED").length;
   const refundedCount = transactions.filter((t) => t.state === "REFUNDED").length;
   const availableListings = listings.filter((l) => l.status === "AVAILABLE").length;
   const soldListings = listings.filter((l) => l.status === "SOLD").length;
 
-  // Group by state
+  // Group by 4 actual FSM states
   const stateGroups: Array<{ state: EscrowState; count: number; txs: typeof transactions }> = [
-    { state: "DEPOSITED", count: 0, txs: [] },
     { state: "HELD", count: 0, txs: [] },
     { state: "REFUND_REQUESTED", count: 0, txs: [] },
     { state: "RELEASED", count: 0, txs: [] },
