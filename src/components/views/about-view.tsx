@@ -196,10 +196,6 @@ export function AboutView() {
             <h2 className="text-xl md:text-2xl font-bold mt-1">
               5 lapisan sistem
             </h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-              Dari UI sampai blockchain, setiap lapisan punya tanggung jawab
-              jelas. Pemisahan ini memudahkan testing & dokumentasi.
-            </p>
           </div>
 
           <div className="space-y-2">
