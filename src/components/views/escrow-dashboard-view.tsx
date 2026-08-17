@@ -738,8 +738,8 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
           </div>
           <div className="text-base font-semibold">
             {tx.state === "DEPOSITED" && "Menunggu konfirmasi seller"}
-            {tx.state === "HELD" && "Akun menunggu konfirmasi buyer"}
-            {tx.state === "REFUND_REQUESTED" && "Menunggu keputusan seller"}
+            {tx.state === "HELD" && (isBuyer ? "Konfirmasi penerimaan akun" : "Akun dalam escrow")}
+            {tx.state === "REFUND_REQUESTED" && (isSeller ? "Permintaan refund diterima" : "Menunggu keputusan seller")}
             {tx.state === "RELEASED" && "Transaksi selesai"}
             {tx.state === "REFUNDED" && "Refund berhasil"}
           </div>
@@ -812,11 +812,26 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
         <div className="space-y-3">
           <div className="p-3 rounded-lg bg-orange-400/10 border border-orange-400/30 flex items-start gap-2.5">
             <AlertCircle className="size-4 text-orange-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-orange-400/90 leading-relaxed">
-              Buyer minta refund sebesar{" "}
-              <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>.
-              Seller harus approve (dana kembali ke buyer) atau reject (escrow
-              kembali ke HELD).
+            <div className="text-xs text-orange-400/90 leading-relaxed font-medium">
+              {isBuyer ? (
+                <>
+                  Anda meminta refund sebesar{" "}
+                  <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>.
+                  Menunggu seller untuk mengambil keputusan.
+                </>
+              ) : isSeller ? (
+                <>
+                  Buyer meminta refund sebesar{" "}
+                  <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>.
+                  Anda dapat menyetujui (dana kembali ke buyer) atau menolak (escrow kembali ke HELD).
+                </>
+              ) : (
+                <>
+                  Buyer meminta refund sebesar{" "}
+                  <span className="font-mono font-semibold">{formatMATIC(tx.amountMatic)}</span>.
+                  Menunggu keputusan seller.
+                </>
+              )}
             </div>
           </div>
 
@@ -838,12 +853,6 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
                 <XCircle className="size-4" />
                 {isLoading === "reject" ? "Memproses..." : "Reject Refund"}
               </button>
-            </div>
-          )}
-
-          {isBuyer && (
-            <div className="p-3 rounded-lg bg-muted/20 border border-border text-xs text-muted-foreground text-center">
-              Refund request Anda terkirim. Menunggu seller approve atau reject.
             </div>
           )}
 
