@@ -13,12 +13,9 @@ import {
   RotateCcw,
   BookOpen,
 } from "lucide-react";
-import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export function HowItWorksView() {
-  const setView = useAppStore((s) => s.setView);
-
   return (
     <div className="animate-fade-slide-up">
       {/* Hero */}
@@ -229,27 +226,6 @@ export function HowItWorksView() {
               <span className="text-muted-foreground">NONE</span>
             </code>
           </pre>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="px-4 md:px-6 py-12 max-w-4xl mx-auto">
-        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
-          <Shield className="size-8 mx-auto text-primary mb-3" />
-          <h3 className="text-lg font-semibold mb-2">
-            Lihat implementasi nyata
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-            Buka Transactions → Active Escrow untuk lihat state machine berjalan
-            dengan transaksi demo.
-          </p>
-          <button
-            onClick={() => setView("transactions")}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition-all glow-primary"
-          >
-            Lihat Active Escrow
-            <ArrowRight className="size-4" />
-          </button>
         </div>
       </section>
     </div>
