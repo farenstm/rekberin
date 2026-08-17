@@ -18,7 +18,10 @@ import { updateListingOnChain } from "@/lib/web3";
 import { IPFSImage } from "@/components/ipfs-image";
 import { cn } from "@/lib/utils";
 
+import { useToast } from "@/hooks/use-toast";
+
 export function EditListingView() {
+  const { toast } = useToast();
   const setView = useAppStore((s) => s.setView);
   const openListing = useAppStore((s) => s.openListing);
   const editListingId = useAppStore((s) => s.editListingId);
@@ -126,10 +129,18 @@ export function EditListingView() {
 
       setPublishing(false);
       setPublishStep("");
+      toast({
+        title: "Update Berhasil!",
+        description: "Detail listing akun berhasil diperbarui di blockchain.",
+      });
       openListing(listing.id);
     } catch (err: any) {
       console.error(err);
-      alert("Gagal mem-publish update: " + err.message);
+      toast({
+        title: "Gagal Meng-update Listing",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
       setPublishing(false);
       setPublishStep("");
     }

@@ -176,23 +176,22 @@ export async function fetchAllListingsFromChain() {
           const base64Data = cid.replace("data:application/json;base64,", "");
           metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
         } else {
-          // Fetch from gateways
           const gateways = [
             `https://dweb.link/ipfs/${cid}`,
             `https://ipfs.io/ipfs/${cid}`,
             `https://gateway.pinata.cloud/ipfs/${cid}`
           ];
           
-          for (const url of gateways) {
-            try {
-              const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-              if (res.ok) {
-                metadata = await res.json();
-                break;
-              }
-            } catch (err) {
-              // ignore and try next
-            }
+          try {
+            metadata = await Promise.any(
+              gateways.map(async (url) => {
+                const res = await fetch(url, { signal: AbortSignal.timeout(3500) });
+                if (!res.ok) throw new Error("Gateway failed");
+                return await res.json();
+              })
+            );
+          } catch (err) {
+            // all gateways failed or timed out
           }
         }
       } catch (e) {
@@ -246,7 +245,9 @@ export async function fetchAllEscrowsFromChain() {
       
       const createdEvents = await contract.queryFilter(contract.filters.EscrowCreated(), from, to);
       for (const ev of createdEvents) {
-        const id = `#${ev.args[0].toString()}`;
+        const args = (ev as any).args;
+        if (!args) continue;
+        const id = `#${args[0].toString()}`;
         if (!txMap[id]) txMap[id] = {};
         txMap[id].createTx = ev.transactionHash;
         txMap[id].createBlock = ev.blockNumber;
@@ -254,7 +255,9 @@ export async function fetchAllEscrowsFromChain() {
 
       const stateEvents = await contract.queryFilter(contract.filters.EscrowStateChanged(), from, to);
       for (const ev of stateEvents) {
-        const id = `#${ev.args[0].toString()}`;
+        const args = (ev as any).args;
+        if (!args) continue;
+        const id = `#${args[0].toString()}`;
         if (!txMap[id]) txMap[id] = {};
         // Keep latest state change tx
         txMap[id].stateTx = ev.transactionHash;

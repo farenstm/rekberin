@@ -21,9 +21,11 @@ import {
 } from "@/lib/format";
 import { CONTRACT_INFO } from "@/lib/contract";
 import { createEscrowOnChain } from "@/lib/web3";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 export function ListingDetailView() {
+  const { toast } = useToast();
   const selectedId = useAppStore((s) => s.selectedListingId);
   const setView = useAppStore((s) => s.setView);
   const openTransaction = useAppStore((s) => s.openTransaction);
@@ -51,7 +53,11 @@ export function ListingDetailView() {
 
   const handleBuy = async () => {
     if (wallet.status !== "connected") {
-      alert("Connect wallet dulu");
+      toast({
+        title: "Koneksi Wallet Diperlukan",
+        description: "Silakan hubungkan wallet MetaMask Anda terlebih dahulu.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -66,11 +72,19 @@ export function ListingDetailView() {
         receipt.hash,
         receipt.blockNumber,
       );
+      toast({
+        title: "Escrow Berhasil Dibuat!",
+        description: `Transaksi #${escrowId} telah berhasil dibuat di blockchain.`,
+      });
       openTransaction(newTxId);
     } catch (err: any) {
       console.error(err);
       const message = err?.shortMessage || err?.message || "Transaksi tidak dapat diproses.";
-      alert(message);
+      toast({
+        title: "Transaksi Gagal",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setIsBuying(false);
     }
@@ -87,11 +101,18 @@ export function ListingDetailView() {
       const updateStatus = useListingsStore.getState().updateListingStatus;
       updateStatus(listing.id, "CANCELLED");
       
-      alert("Listing berhasil dibatalkan!");
+      toast({
+        title: "Listing Dibatalkan",
+        description: "Listing akun ini telah berhasil dibatalkan.",
+      });
       setView("marketplace");
     } catch (err: any) {
       console.error(err);
-      alert("Gagal membatalkan listing: " + err.message);
+      toast({
+        title: "Gagal Pembatalan",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsCancelling(false);
     }

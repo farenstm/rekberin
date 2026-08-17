@@ -293,6 +293,9 @@ export const useEscrowStore = create<EscrowStore>()(
     const depositEvent = makeEvent(id, "Deposited", buyer, txHash, blockNumber, {
       amount: `${listing.priceMatic} MATIC`,
     });
+    const heldEvent = makeEvent(id, "Held", buyer, txHash, blockNumber, {
+      amount: `${listing.priceMatic} MATIC`,
+    });
     const tx: EscrowTransaction = {
       id,
       listingId: listing.id,
@@ -307,7 +310,7 @@ export const useEscrowStore = create<EscrowStore>()(
       updatedAt: now,
       depositTxHash: depositEvent.txHash,
       holdTxHash: depositEvent.txHash,
-      events: [createdEvent, depositEvent],
+      events: [createdEvent, depositEvent, heldEvent],
       buyerConfirmedReceipt: false,
       sellerConfirmedDelivery: true, // Auto true because no longer needed
     };
@@ -429,9 +432,6 @@ export const useEscrowStore = create<EscrowStore>()(
       // Merge listing info into escrows
       const { useListingsStore } = await import("./store");
       
-      // Force sync listings first so we always have the freshest metadata!
-      await useListingsStore.getState().syncListings();
-      
       const listings = useListingsStore.getState().listings;
       const persistedTransactions = get().transactions;
       
@@ -454,7 +454,8 @@ export const useEscrowStore = create<EscrowStore>()(
         if (createTx) {
           finalEvents.push(
             makeEvent(e.id, "EscrowCreated", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC`, listingId: e.listingId }),
-            makeEvent(e.id, "Deposited", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC` })
+            makeEvent(e.id, "Deposited", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC` }),
+            makeEvent(e.id, "Held", e.buyer, createTx, createBlock, { amount: `${e.amountMatic} MATIC` })
           );
         }
 

@@ -40,6 +40,7 @@ import {
   approveRefundOnChain,
   rejectRefundOnChain,
 } from "@/lib/web3";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 export function EscrowDashboardView() {
@@ -633,6 +634,7 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
   const isBuyer = wallet.status === "connected" && wallet.address.toLowerCase() === tx.buyer.toLowerCase();
   const isSeller = wallet.status === "connected" && wallet.address.toLowerCase() === tx.seller.toLowerCase();
 
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const txNum = parseInt(tx.id.replace(/\D/g, ""), 10);
@@ -643,8 +645,16 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
       setIsLoading("confirm");
       const receipt = await confirmReceiptOnChain(txNum);
       confirmReceived(tx.id, receipt.hash, receipt.blockNumber);
+      toast({
+        title: "Dana Berhasil Dilepas!",
+        description: "Transaksi selesai. Dana telah dikirimkan ke wallet seller.",
+      });
     } catch (err: any) {
-      alert("Transaksi gagal: " + err.message);
+      toast({
+        title: "Transaksi Gagal",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(null);
     }
@@ -656,8 +666,16 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
       setIsLoading("refund");
       const receipt = await requestRefundOnChain(txNum);
       requestRefund(tx.id, receipt.hash, receipt.blockNumber);
+      toast({
+        title: "Refund Berhasil Diajukan",
+        description: "Permintaan refund telah dikirimkan ke seller.",
+      });
     } catch (err: any) {
-      alert("Transaksi gagal: " + err.message);
+      toast({
+        title: "Transaksi Gagal",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(null);
     }
@@ -669,8 +687,16 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
       setIsLoading("approve");
       const receipt = await approveRefundOnChain(txNum);
       approveRefund(tx.id, receipt.hash, receipt.blockNumber);
+      toast({
+        title: "Refund Disetujui",
+        description: "Dana telah berhasil dikembalikan ke buyer.",
+      });
     } catch (err: any) {
-      alert("Transaksi gagal: " + err.message);
+      toast({
+        title: "Transaksi Gagal",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(null);
     }
@@ -682,8 +708,16 @@ function ActionPanel({ tx }: { tx: EscrowTransaction }) {
       setIsLoading("reject");
       const receipt = await rejectRefundOnChain(txNum);
       rejectRefund(tx.id, receipt.hash, receipt.blockNumber);
+      toast({
+        title: "Refund Ditolak",
+        description: "Permintaan refund ditolak. Transaksi kembali ke status HELD.",
+      });
     } catch (err: any) {
-      alert("Transaksi gagal: " + err.message);
+      toast({
+        title: "Transaksi Gagal",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(null);
     }

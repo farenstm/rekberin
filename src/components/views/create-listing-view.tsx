@@ -19,7 +19,10 @@ import { cn } from "@/lib/utils";
 
 // removed emojis and colors
 
+import { useToast } from "@/hooks/use-toast";
+
 export function CreateListingView() {
+  const { toast } = useToast();
   const setView = useAppStore((s) => s.setView);
   const openListing = useAppStore((s) => s.openListing);
   const createListing = useListingsStore((s) => s.createListing);
@@ -100,10 +103,18 @@ export function CreateListingView() {
 
       setPublishing(false);
       setPublishStep("");
+      toast({
+        title: "Listing Berhasil Dipublikasikan!",
+        description: "Akun game Anda sekarang sudah dapat dibeli di marketplace.",
+      });
       openListing(id);
     } catch (err: any) {
       console.error(err);
-      alert("Gagal mem-publish listing: " + err.message);
+      toast({
+        title: "Gagal Mempublikasikan Listing",
+        description: err.shortMessage || err.message,
+        variant: "destructive",
+      });
       setPublishing(false);
       setPublishStep("");
     }
