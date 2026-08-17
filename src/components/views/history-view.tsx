@@ -35,23 +35,44 @@ const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
 export function HistoryView() {
   const transactions = useEscrowStore((s) => s.transactions);
   const openTransaction = useAppStore((s) => s.openTransaction);
+  const wallet = useWalletStore((s) => s.wallet);
   const [filter, setFilter] = useState<EscrowState | "ALL">("ALL");
 
+  const userTransactions = useMemo(() => {
+    if (wallet.status !== "connected") return [];
+    return transactions.filter(
+      (t) =>
+        t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
+        t.seller.toLowerCase() === wallet.address.toLowerCase(),
+    );
+  }, [transactions, wallet]);
+
   const filtered = useMemo(() => {
-    let list = [...transactions].sort((a, b) => b.createdAt - a.createdAt);
+    let list = [...userTransactions].sort((a, b) => b.createdAt - a.createdAt);
     if (filter !== "ALL") list = list.filter((t) => t.state === filter);
     return list;
-  }, [transactions, filter]);
+  }, [userTransactions, filter]);
 
   const stats = useMemo(() => {
-    const total = transactions.length;
-    const released = transactions.filter((t) => t.state === "RELEASED").length;
-    const refunded = transactions.filter((t) => t.state === "REFUNDED").length;
-    const held = transactions.filter(
+    const total = userTransactions.length;
+    const released = userTransactions.filter((t) => t.state === "RELEASED").length;
+    const refunded = userTransactions.filter((t) => t.state === "REFUNDED").length;
+    const held = userTransactions.filter(
       (t) => t.state === "HELD" || t.state === "DEPOSITED",
     ).length;
     return { total, released, refunded, held };
-  }, [transactions]);
+  }, [userTransactions]);
+
+  if (wallet.status !== "connected") {
+    return (
+      <div className="px-4 py-24 flex flex-col items-center justify-center text-center">
+        <h3 className="text-xl font-bold mb-2">Hubungkan Wallet Anda 🔒</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+          Riwayat transaksi bersifat privat. Silakan hubungkan wallet Web3 Anda untuk melihat riwayat transaksi Anda.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-slide-up">

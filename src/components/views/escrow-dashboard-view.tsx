@@ -51,15 +51,23 @@ export function EscrowDashboardView() {
 
   const wallet = useWalletStore((s) => s.wallet);
 
-  // Filter transactions for the current user if connected
-  const userTransactions =
-    wallet.status === "connected"
-      ? transactions.filter(
-          (t) =>
-            t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
-            t.seller.toLowerCase() === wallet.address.toLowerCase()
-        )
-      : transactions;
+  if (wallet.status !== "connected") {
+    return (
+      <div className="px-4 py-24 flex flex-col items-center justify-center text-center">
+        <h3 className="text-xl font-bold mb-2">Hubungkan Wallet Anda 🔒</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+          Active Escrow bersifat privat. Silakan hubungkan wallet Web3 Anda untuk melihat dan mengelola transaksi escrow Anda.
+        </p>
+      </div>
+    );
+  }
+
+  // Filter transactions strictly for the current user
+  const userTransactions = transactions.filter(
+    (t) =>
+      t.buyer.toLowerCase() === wallet.address.toLowerCase() ||
+      t.seller.toLowerCase() === wallet.address.toLowerCase(),
+  );
 
   // Default to active escrow if no selection
   const activeTx =
@@ -68,7 +76,7 @@ export function EscrowDashboardView() {
     userTransactions.find((t) => t.state === "DEPOSITED");
 
   const tx = selectedTxId
-    ? transactions.find((t) => t.id === selectedTxId)
+    ? userTransactions.find((t) => t.id === selectedTxId)
     : activeTx;
 
   if (!tx) {
