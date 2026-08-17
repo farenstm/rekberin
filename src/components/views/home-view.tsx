@@ -25,34 +25,49 @@ export function HomeView() {
   const openTransaction = useAppStore((s) => s.openTransaction);
   const listings = useListingsStore((s) => s.listings);
   const transactions = useEscrowStore((s) => s.transactions);
-
-  const totalVolume = transactions
-    .filter((t) => t.state === "RELEASED")
-    .reduce((sum, t) => sum + t.amountMatic, 0);
-
-  const totalEscrow = transactions
-    .filter((t) => t.state === "HELD" || t.state === "DEPOSITED")
-    .reduce((sum, t) => sum + t.amountMatic, 0);
-
-  const releasedCount = transactions.filter((t) => t.state === "RELEASED").length;
-  const refundedCount = transactions.filter((t) => t.state === "REFUNDED").length;
-
   const wallet = useWalletStore((s) => s.wallet);
 
-  const userTransactions =
-    wallet.status === "connected"
-      ? transactions.filter(
-          (t) =>
-            isSameAddress(t.buyer, wallet.address) ||
-            isSameAddress(t.seller, wallet.address)
-        )
-      : transactions;
+  const safeTransactions = useMemo(() => {
+    return (transactions || []).filter((t) => Boolean(t));
+  }, [transactions]);
+
+  const totalVolume = useMemo(() => {
+    return safeTransactions
+      .filter((t) => t.state === "RELEASED")
+      .reduce((sum, t) => sum + (t.amountMatic || 0), 0);
+  }, [safeTransactions]);
+
+  const totalEscrow = useMemo(() => {
+    return safeTransactions
+      .filter((t) => t.state === "HELD" || t.state === "DEPOSITED")
+      .reduce((sum, t) => sum + (t.amountMatic || 0), 0);
+  }, [safeTransactions]);
+
+  const releasedCount = useMemo(() => {
+    return safeTransactions.filter((t) => t.state === "RELEASED").length;
+  }, [safeTransactions]);
+
+  const refundedCount = useMemo(() => {
+    return safeTransactions.filter((t) => t.state === "REFUNDED").length;
+  }, [safeTransactions]);
+
+  const userTransactions = useMemo(() => {
+    if (wallet.status !== "connected" || !wallet.address) return safeTransactions;
+    return safeTransactions.filter(
+      (t) =>
+        isSameAddress(t.buyer, wallet.address) ||
+        isSameAddress(t.seller, wallet.address),
+    );
+  }, [safeTransactions, wallet]);
 
   // Current active escrow (HERO preview)
-  const activeEscrow =
-    userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
-    userTransactions.find((t) => t.state === "HELD") ||
-    userTransactions.find((t) => t.state === "DEPOSITED");
+  const activeEscrow = useMemo(() => {
+    return (
+      userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
+      userTransactions.find((t) => t.state === "HELD") ||
+      userTransactions.find((t) => t.state === "DEPOSITED")
+    );
+  }, [userTransactions]);
 
   return (
     <div className="animate-fade-slide-up">
