@@ -25,10 +25,10 @@ interface WalletStore {
 }
 
 const DEFAULT_WALLET: WalletInfo = {
-  address: "0x45aB3cD2e1F40a5B6c7D8e9F0a1B2c3D4e5F6a78",
+  address: "",
   chainId: "0x13882",
   networkName: "Polygon Amoy Testnet",
-  balanceMatic: 1842.36,
+  balanceMatic: 0,
   status: "disconnected",
 };
 
@@ -39,18 +39,8 @@ export const useWalletStore = create<WalletStore>()(
       connect: async () => {
         set((s) => ({ wallet: { ...s.wallet, status: "connecting" } }));
         try {
-          if (typeof window === "undefined") {
-            throw new Error("No window object");
-          }
-          if (!window.ethereum) {
-            console.warn("No Web3 wallet extension found, connecting Demo Wallet");
-            set((s) => ({
-              wallet: {
-                ...DEFAULT_WALLET,
-                status: "connected",
-              },
-            }));
-            return;
+          if (typeof window === "undefined" || !window.ethereum) {
+            throw new Error("MetaMask / Web3 Wallet tidak ditemukan. Silakan install extension wallet di browser Anda.");
           }
           const { switchNetworkToAmoy } = await import("./web3");
           await switchNetworkToAmoy();
