@@ -18,7 +18,7 @@ import { StateBadge } from "@/components/state-badge";
 import { CONTRACT_INFO } from "@/lib/contract";
 import { shortenAddress, timeAgo, formatMATIC } from "@/lib/format";
 import { IPFSImage } from "@/components/ipfs-image";
-import { cn } from "@/lib/utils";
+import { cn, isSameAddress } from "@/lib/utils";
 
 export function HomeView() {
   const setView = useAppStore((s) => s.setView);
