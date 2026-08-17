@@ -151,9 +151,9 @@ export function HomeView() {
                   txId={activeEscrow.id}
                   state={activeEscrow.state}
                   amount={activeEscrow.amountMatic}
-                  listingTitle={activeEscrow.listing.title}
-                  listingImageUrl={activeEscrow.listing.imageUrl}
-                  sellerName={activeEscrow.listing.sellerName}
+                  listingTitle={activeEscrow.listing?.title || "Game Account"}
+                  listingImageUrl={activeEscrow.listing?.imageUrl || ""}
+                  sellerName={activeEscrow.listing?.sellerName || "Seller"}
                   updatedAt={activeEscrow.updatedAt}
                   onOpen={() => openTransaction(activeEscrow.id)}
                 />
