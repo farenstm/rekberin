@@ -169,13 +169,23 @@ export async function fetchAllListingsFromChain() {
       
       let metadata: any = {};
       try {
-        let cid = l.cid.replace("ipfs://", "");
+        let cid = l.cid.replace("ipfs://", "").trim();
         
-        if (cid.startsWith("data:application/json;base64,")) {
-          // Parse base64 directly from the string
+        if (cid.startsWith("{")) {
+          try {
+            metadata = JSON.parse(cid);
+          } catch (e) {}
+        } else if (cid.startsWith("data:application/json;base64,")) {
           const base64Data = cid.replace("data:application/json;base64,", "");
           metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
-        } else {
+        } else if (!cid.startsWith("Qm") && !cid.startsWith("bafy") && cid.length > 20 && !cid.includes("/")) {
+          try {
+            const decoded = decodeURIComponent(escape(atob(cid)));
+            if (decoded.startsWith("{")) metadata = JSON.parse(decoded);
+          } catch (e) {}
+        }
+        
+        if (!metadata.title && !metadata.game && (cid.startsWith("Qm") || cid.startsWith("bafy"))) {
           const gateways = [
             `/api/ipfs/metadata?cid=${cid}`,
             `https://gateway.pinata.cloud/ipfs/${cid}`,

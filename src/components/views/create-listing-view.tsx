@@ -77,10 +77,21 @@ export function CreateListingView() {
         whatsapp: whatsapp.trim() || undefined,
         image: imageUrl,
       };
-      const metaCid = await uploadMetadataToIPFS(metadata);
+      
+      let metaCid = "";
+      try {
+        metaCid = await uploadMetadataToIPFS(metadata);
+      } catch (e) {
+        console.warn("IPFS upload fallback to on-chain base64 encoding", e);
+      }
+
+      // Encode metadata directly as Base64 Data URI for INSTANT 0ms loading on-chain!
+      const jsonStr = JSON.stringify(metadata);
+      const base64Cid = `data:application/json;base64,${btoa(unescape(encodeURIComponent(jsonStr)))}`;
+      const onChainCid = metaCid ? metaCid : base64Cid;
 
       setPublishStep("Mendaftarkan listing di smart contract...");
-      const { listingId } = await createListingOnChain(Number(priceMatic.toFixed(4)), metaCid);
+      const { listingId } = await createListingOnChain(Number(priceMatic.toFixed(4)), base64Cid);
 
       const id = createListing({
         game: game.trim(),

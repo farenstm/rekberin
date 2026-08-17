@@ -104,12 +104,21 @@ export function EditListingView() {
         whatsapp: whatsapp.trim() || undefined,
         image: imageUrl,
       };
-      const metaCid = await uploadMetadataToIPFS(metadata);
+      
+      let metaCid = "";
+      try {
+        metaCid = await uploadMetadataToIPFS(metadata);
+      } catch (e) {
+        console.warn("IPFS upload fallback", e);
+      }
+
+      const jsonStr = JSON.stringify(metadata);
+      const base64Cid = `data:application/json;base64,${btoa(unescape(encodeURIComponent(jsonStr)))}`;
 
       setPublishStep("Memperbarui data di smart contract...");
       // Ambil angka id dari "L-001" -> 1
       const onChainId = parseInt(listing.id.replace(/\D/g, ""), 10);
-      await updateListingOnChain(onChainId, Number(priceMatic.toFixed(4)), metaCid);
+      await updateListingOnChain(onChainId, Number(priceMatic.toFixed(4)), base64Cid);
 
       updateListingDetails(listing.id, {
         game: game.trim(),
