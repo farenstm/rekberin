@@ -29,11 +29,9 @@ export function CreateListingView() {
   const wallet = useWalletStore((s) => s.wallet);
 
   const [game, setGame] = useState("");
-  const [title, setTitle] = useState("");
   const [tier, setTier] = useState("");
   const [priceIDR, setPriceIDR] = useState("");
   const [description, setDescription] = useState("");
-  const [features, setFeatures] = useState("");
   const [discord, setDiscord] = useState("");
   const [telegram, setTelegram] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -47,7 +45,6 @@ export function CreateListingView() {
 
   const canPublish =
     game.trim() &&
-    title.trim() &&
     tier.trim() &&
     priceNum > 0 &&
     description.trim() &&
@@ -63,14 +60,15 @@ export function CreateListingView() {
       const imageUrl = `ipfs://${imageCid}`;
 
       setPublishStep("Uploading metadata ke IPFS...");
-      const featuresArr = features
-        .split(",")
+      const featuresArr = description
+        .split(/[,;\n]/)
         .map((s) => s.trim())
         .filter(Boolean);
+      const listingTitle = tier.trim();
 
       const metadata = {
         game: game.trim(),
-        title: title.trim(),
+        title: listingTitle,
         tier: tier.trim(),
         description: description.trim(),
         features: featuresArr,
@@ -86,7 +84,7 @@ export function CreateListingView() {
 
       const id = createListing({
         game: game.trim(),
-        title: title.trim(),
+        title: listingTitle,
         tier: tier.trim(),
         description: description.trim(),
         priceIDR: priceNum,
@@ -158,7 +156,7 @@ export function CreateListingView() {
         )}
 
         <div className="space-y-5">
-          {/* Game + Tier */}
+          {/* Game + Tier/Rank */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Game" icon={Tag} required>
               <select
@@ -174,47 +172,24 @@ export function CreateListingView() {
                 <option value="PUBG Mobile">PUBG Mobile</option>
               </select>
             </Field>
-            <Field label="Tier / Rank" required>
+            <Field label="Tier / Title Akun" required>
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
-                placeholder=""
+                placeholder="Mis: Mythic Glory 100 Stars / Radiant"
                 className="input"
               />
             </Field>
           </div>
 
-          {/* Title */}
-          <Field label="Title" required>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder=""
-              className="input"
-            />
-          </Field>
-
           {/* Description */}
-          <Field label="Description" required>
+          <Field label="Description & Highlights" required>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail akun: jumlah hero, skin, level, binding email, dll."
+              placeholder="Detail & highlight akun: 100 Hero, 200 Skin, Gmail Bind, Full Spec."
               rows={4}
               className="input resize-none"
-            />
-          </Field>
-
-          {/* Features */}
-          <Field
-            label="Highlights"
-            hint="Pisahkan dengan koma. Mis: 100 Hero, 200 Skin, Gmail Bind"
-          >
-            <input
-              value={features}
-              onChange={(e) => setFeatures(e.target.value)}
-              placeholder="100 Hero, 200 Skin, Gmail Bind"
-              className="input"
             />
           </Field>
 
