@@ -122,6 +122,10 @@ export function EscrowDetailContent({
   tx: EscrowTransaction;
   isHistory?: boolean;
 }) {
+  const wallet = useWalletStore((s) => s.wallet);
+  const isBuyer = wallet.status === "connected" && isSameAddress(tx.buyer, wallet.address);
+  const isSeller = wallet.status === "connected" && isSameAddress(tx.seller, wallet.address);
+
   // Status narrative based on state
   const statusNarrative = getStatusNarrative(tx.state);
 
@@ -249,8 +253,8 @@ export function EscrowDetailContent({
               <PartyRow
                 role="Buyer"
                 address={tx.buyer}
-                label="Anda (current wallet)"
-                icon={Wallet}
+                label={isBuyer ? "Anda (current wallet)" : "Buyer"}
+                icon={isBuyer ? Wallet : User}
                 tone="info"
               />
               <div className="flex items-center gap-2 my-2 pl-4">
@@ -261,8 +265,8 @@ export function EscrowDetailContent({
               <PartyRow
                 role="Seller"
                 address={tx.seller}
-                label={tx.listing?.sellerName || "Seller"}
-                icon={User}
+                label={isSeller ? "Anda (current wallet)" : (tx.listing?.sellerName || "Seller")}
+                icon={isSeller ? Wallet : User}
                 tone="warning"
               />
             </div>
