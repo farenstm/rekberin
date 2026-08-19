@@ -19,10 +19,12 @@ import {
   Clock,
   Shield,
   ArrowRight,
+  ArrowLeft,
   History as HistoryIcon,
   Filter,
 } from "lucide-react";
 import type { EscrowState } from "@/lib/types";
+import { EscrowDetailContent } from "./escrow-dashboard-view";
 
 const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
   { value: "ALL", label: "All" },
@@ -34,12 +36,18 @@ const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
 
 export function HistoryView() {
   const transactions = useEscrowStore((s) => s.transactions);
+  const selectedTxId = useAppStore((s) => s.selectedTransactionId);
   const openTransaction = useAppStore((s) => s.openTransaction);
   const [filter, setFilter] = useState<EscrowState | "ALL">("ALL");
 
   const allTransactions = useMemo(() => {
     return (transactions || []).filter((t) => Boolean(t));
   }, [transactions]);
+
+  const selectedTx = useMemo(
+    () => allTransactions.find((t) => t.id === selectedTxId),
+    [allTransactions, selectedTxId],
+  );
 
   const filtered = useMemo(() => {
     let list = [...allTransactions].sort(
@@ -58,6 +66,31 @@ export function HistoryView() {
     ).length;
     return { total, released, refunded, held };
   }, [allTransactions]);
+
+  if (selectedTx) {
+    return (
+      <div className="animate-fade-slide-up">
+        {/* Back navigation header */}
+        <div className="border-b border-border/60 bg-muted/10">
+          <div className="px-4 md:px-6 py-4 max-w-6xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => openTransaction("")}
+              className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="size-4" />
+              Kembali ke Daftar Riwayat (History)
+            </button>
+            <div className="text-xs font-mono text-muted-foreground">
+              History Detail • {selectedTx.id}
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Escrow Timeline & On-Chain Event Log */}
+        <EscrowDetailContent tx={selectedTx} isHistory />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-slide-up">

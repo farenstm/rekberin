@@ -69,39 +69,65 @@ export function EscrowDashboardView() {
       isSameAddress(t.seller, wallet.address),
   );
 
-  // Default to active escrow if no selection
+  // Active Escrow tab ONLY shows transactions currently in progress
   const activeTx =
     userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
     userTransactions.find((t) => t.state === "HELD") ||
     userTransactions.find((t) => t.state === "DEPOSITED");
 
-  const tx = selectedTxId
+  const selectedCandidate = selectedTxId
     ? userTransactions.find((t) => t.id === selectedTxId)
-    : activeTx;
+    : null;
+
+  const isSelectedActive =
+    selectedCandidate &&
+    (selectedCandidate.state === "HELD" ||
+      selectedCandidate.state === "REFUND_REQUESTED" ||
+      selectedCandidate.state === "DEPOSITED");
+
+  const tx = isSelectedActive ? selectedCandidate : activeTx;
 
   if (!tx) {
     return (
       <div className="px-4 py-24 flex flex-col items-center justify-center text-center">
-        <h3 className="text-xl font-bold mb-2">Wah, masih kosong nih! 🍃</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6 leading-relaxed">
-          Saat ini kamu belum punya transaksi aktif yang sedang berjalan di RekberIn. Yuk, mulai cari akun game idamanmu sekarang!
+        <h3 className="text-xl font-bold mb-2">Tidak Ada Transaksi Aktif 🍃</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
+          Saat ini Anda tidak memiliki transaksi escrow yang sedang berjalan. Semua transaksi Anda yang telah selesai dapat dilihat di tab History.
         </p>
-        <button
-          onClick={() => setView("marketplace")}
-          className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
-        >
-          Jelajahi Marketplace
-        </button>
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <button
+            onClick={() => setView("marketplace")}
+            className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+          >
+            Jelajahi Marketplace
+          </button>
+          <button
+            onClick={() => setTransactionsTab("history")}
+            className="px-6 py-2.5 rounded-full bg-secondary text-secondary-foreground text-sm font-semibold hover:bg-secondary/80 transition-all border border-border"
+          >
+            Lihat Riwayat (History)
+          </button>
+        </div>
       </div>
     );
   }
 
+  return <EscrowDetailContent tx={tx} />;
+}
+
+export function EscrowDetailContent({
+  tx,
+  isHistory = false,
+}: {
+  tx: EscrowTransaction;
+  isHistory?: boolean;
+}) {
   // Status narrative based on state
   const statusNarrative = getStatusNarrative(tx.state);
 
   return (
     <div>
-      {/* HERO — Current Escrow */}
+      {/* HERO — Escrow Header */}
       <div className="border-b border-border/60">
         <div className="px-4 md:px-6 py-6 max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -109,7 +135,7 @@ export function EscrowDashboardView() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Current Escrow
+                  {isHistory ? "Transaction Detail" : "Current Escrow"}
                 </span>
                 <span className="font-mono text-sm font-semibold text-foreground/80">
                   #{tx.id.replace("#", "")}

@@ -134,12 +134,15 @@ export const useAppStore = create<AppStore>()(
         set({ selectedListingId: id, view: "listing-detail" }),
       openEditListing: (id) =>
         set({ editListingId: id, view: "edit-listing" }),
-      openTransaction: (id) =>
+      openTransaction: (id) => {
+        const tx = useEscrowStore.getState().transactions.find((t) => t.id === id);
+        const isActive = tx && (tx.state === "HELD" || tx.state === "REFUND_REQUESTED" || tx.state === "DEPOSITED");
         set({
           selectedTransactionId: id,
           view: "transactions",
-          transactionsTab: "active",
-        }),
+          transactionsTab: isActive ? "active" : "history",
+        });
+      },
     }),
     {
       name: "escrowchain-app-state",
