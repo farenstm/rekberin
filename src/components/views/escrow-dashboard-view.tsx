@@ -123,8 +123,8 @@ export function EscrowDetailContent({
   isHistory?: boolean;
 }) {
   const wallet = useWalletStore((s) => s.wallet);
-  const isBuyer = wallet.status === "connected" && isSameAddress(tx.buyer, wallet.address);
-  const isSeller = wallet.status === "connected" && isSameAddress(tx.seller, wallet.address);
+  const isBuyer = Boolean(wallet.address) && isSameAddress(tx.buyer, wallet.address);
+  const isSeller = Boolean(wallet.address) && isSameAddress(tx.seller, wallet.address);
 
   // Status narrative based on state
   const statusNarrative = getStatusNarrative(tx.state);
