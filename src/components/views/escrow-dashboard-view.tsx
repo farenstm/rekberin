@@ -62,21 +62,27 @@ export function EscrowDashboardView() {
     );
   }
 
-  // Filter transactions strictly for the current user
-  const userTransactions = transactions.filter(
+  // Sort all transactions newest first
+  const allSorted = [...(transactions || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  // Filter transactions for the current connected wallet
+  const userTransactions = allSorted.filter(
     (t) =>
       isSameAddress(t.buyer, wallet.address) ||
       isSameAddress(t.seller, wallet.address),
   );
 
+  const pool = userTransactions.length > 0 ? userTransactions : allSorted;
+
   // Active Escrow tab ONLY shows transactions currently in progress
-  const activeTx =
-    userTransactions.find((t) => t.state === "REFUND_REQUESTED") ||
-    userTransactions.find((t) => t.state === "HELD") ||
-    userTransactions.find((t) => t.state === "DEPOSITED");
+  const activeTxs = pool.filter(
+    (t) => t.state === "REFUND_REQUESTED" || t.state === "HELD" || t.state === "DEPOSITED"
+  );
+
+  const activeTx = activeTxs[0] || null;
 
   const selectedCandidate = selectedTxId
-    ? userTransactions.find((t) => t.id === selectedTxId)
+    ? allSorted.find((t) => t.id === selectedTxId)
     : null;
 
   const isSelectedActive =
@@ -112,7 +118,38 @@ export function EscrowDashboardView() {
     );
   }
 
-  return <EscrowDetailContent tx={tx} />;
+  return (
+    <div>
+      {activeTxs.length > 1 && (
+        <div className="border-b border-border/60 bg-muted/20 px-4 md:px-6 py-2.5">
+          <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground shrink-0">
+              Pilih Transaksi Aktif ({activeTxs.length}):
+            </span>
+            {activeTxs.map((atx) => {
+              const active = atx.id === tx.id;
+              return (
+                <button
+                  key={atx.id}
+                  onClick={() => useAppStore.getState().openTransaction(atx.id)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-mono font-medium border transition-all shrink-0 flex items-center gap-1.5",
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span>{atx.id}</span>
+                  <StateBadge state={atx.state} size="sm" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <EscrowDetailContent tx={tx} />
+    </div>
+  );
 }
 
 export function EscrowDetailContent({
