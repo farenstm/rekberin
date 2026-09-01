@@ -55,8 +55,17 @@ export function CreateListingView() {
     setPublishing(true);
 
     try {
+      const { getNextListingId } = await import("@/lib/web3");
+      const nextId = await getNextListingId();
+      const listingCode = `listing-${nextId}`;
+      const gameSlug = game.trim().toLowerCase().replace(/[^a-z0-9]/g, "-");
+      
+      const fileExt = imageFile.name.split('.').pop() || 'png';
+      const imageFileName = `${listingCode}-${gameSlug}-cover.${fileExt}`;
+      const metaFileName = `${listingCode}-${gameSlug}.json`;
+
       setPublishStep("Uploading cover image ke IPFS...");
-      const imageCid = await uploadFileToIPFS(imageFile);
+      const imageCid = await uploadFileToIPFS(imageFile, imageFileName);
       const imageUrl = `ipfs://${imageCid}`;
 
       setPublishStep("Uploading metadata ke IPFS...");
@@ -67,6 +76,8 @@ export function CreateListingView() {
       const listingTitle = tier.trim();
 
       const metadata = {
+        id: `L-${String(nextId).padStart(3, "0")}`,
+        onChainId: nextId,
         game: game.trim(),
         title: listingTitle,
         tier: tier.trim(),
@@ -80,7 +91,7 @@ export function CreateListingView() {
       
       let metaCid = "";
       try {
-        metaCid = await uploadMetadataToIPFS(metadata);
+        metaCid = await uploadMetadataToIPFS(metadata, metaFileName);
       } catch (e) {
         console.warn("IPFS upload fallback to on-chain base64 encoding", e);
       }
@@ -88,7 +99,6 @@ export function CreateListingView() {
       // Encode metadata directly as Base64 Data URI for INSTANT 0ms loading on-chain!
       const jsonStr = JSON.stringify(metadata);
       const base64Cid = `data:application/json;base64,${btoa(unescape(encodeURIComponent(jsonStr)))}`;
-      const onChainCid = metaCid ? metaCid : base64Cid;
 
       setPublishStep("Mendaftarkan listing di smart contract...");
       const { listingId } = await createListingOnChain(Number(priceMatic.toFixed(4)), base64Cid);

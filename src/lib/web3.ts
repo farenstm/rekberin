@@ -56,6 +56,18 @@ export async function getContract() {
   return new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
 }
 
+export async function getNextListingId(): Promise<number> {
+  try {
+    const provider = new ethers.JsonRpcProvider("https://polygon-amoy.drpc.org");
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+    const nextId = await contract.nextListingId();
+    return Number(nextId);
+  } catch (e) {
+    console.warn("Failed to query nextListingId on-chain, fallback to default", e);
+    return 1;
+  }
+}
+
 export async function createListingOnChain(priceMatic: number, cid: string) {
   const contract = await getContract();
   const priceWei = ethers.parseEther(priceMatic.toString());
@@ -186,24 +198,34 @@ export async function fetchAllListingsFromChain() {
         }
         
         if (!metadata.title && !metadata.game && (cid.startsWith("Qm") || cid.startsWith("bafy"))) {
-          const gateways = [
-            `/api/ipfs/metadata?cid=${cid}`,
-            `https://gateway.pinata.cloud/ipfs/${cid}`,
-            `https://cloudflare-ipfs.com/ipfs/${cid}`,
-            `https://dweb.link/ipfs/${cid}`,
-            `https://ipfs.io/ipfs/${cid}`,
-          ];
-          
           try {
-            metadata = await Promise.any(
-              gateways.map(async (url) => {
-                const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-                if (!res.ok) throw new Error("Gateway failed");
-                return await res.json();
-              })
-            );
-          } catch (err) {
-            // all gateways failed or timed out
+            const localRes = await fetch(`/api/ipfs/metadata?cid=${cid}`);
+            if (localRes.ok) {
+              const data = await localRes.json();
+              if (data && (data.game || data.title || data.name)) {
+                metadata = data;
+              }
+            }
+          } catch (e) {}
+
+          if (!metadata.title && !metadata.game) {
+            const gateways = [
+              `https://cloudflare-ipfs.com/ipfs/${cid}`,
+              `https://dweb.link/ipfs/${cid}`,
+              `https://ipfs.io/ipfs/${cid}`,
+            ];
+            
+            try {
+              metadata = await Promise.any(
+                gateways.map(async (url) => {
+                  const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+                  if (!res.ok) throw new Error("Gateway failed");
+                  return await res.json();
+                })
+              );
+            } catch (err) {
+              // all gateways failed or timed out
+            }
           }
         }
       } catch (e) {

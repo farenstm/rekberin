@@ -30,15 +30,40 @@ export async function POST(request: Request) {
     );
   }
 
-  const metadata = await request.json().catch(() => null);
-  if (!metadata || typeof metadata !== "object") {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Metadata tidak valid." }, { status: 400 });
   }
+
+  let contentToPin: any;
+  let customPinataName: string;
+
+  if ("metadata" in body && "name" in body) {
+    contentToPin = body.metadata;
+    customPinataName = String(body.name);
+  } else if ("pinataContent" in body) {
+    contentToPin = body.pinataContent;
+    customPinataName = body.pinataMetadata?.name || "listing-metadata.json";
+  } else {
+    contentToPin = body;
+    const game = (body as any).game
+      ? String((body as any).game).toLowerCase().replace(/[^a-z0-9]/g, "-")
+      : "item";
+    const id = (body as any).id || (body as any).listingId || (body as any).onChainId || "";
+    customPinataName = id ? `listing-${id}-${game}.json` : `listing-${game}-${Date.now()}.json`;
+  }
+
+  const payload = {
+    pinataContent: contentToPin,
+    pinataMetadata: {
+      name: customPinataName,
+    },
+  };
 
   const response = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
     method: "POST",
     headers,
-    body: JSON.stringify(metadata),
+    body: JSON.stringify(payload),
   });
   const result = await response.json().catch(() => ({}));
 
@@ -59,17 +84,42 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "CID required" }, { status: 400 });
   }
 
+  const headers = pinataHeaders();
+
+  // 1. Try authenticated Pinata gateway first
+  if (headers) {
+    try {
+      const pinataUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+      const authHeader: Record<string, string> = {};
+      if (headers.Authorization) {
+        authHeader.Authorization = headers.Authorization;
+      } else if (headers.pinata_api_key && headers.pinata_secret_api_key) {
+        authHeader.pinata_api_key = headers.pinata_api_key;
+        authHeader.pinata_secret_api_key = headers.pinata_secret_api_key;
+      }
+      
+      const res = await fetch(pinataUrl, {
+        headers: authHeader,
+        signal: AbortSignal.timeout(6000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return NextResponse.json(data);
+      }
+    } catch (e) {}
+  }
+
+  // 2. Fallback to public IPFS gateways
   const gateways = [
-    `https://gateway.pinata.cloud/ipfs/${cid}`,
     `https://cloudflare-ipfs.com/ipfs/${cid}`,
-    `https://ipfs.io/ipfs/${cid}`,
     `https://dweb.link/ipfs/${cid}`,
+    `https://ipfs.io/ipfs/${cid}`,
   ];
 
   try {
     const data = await Promise.any(
       gateways.map(async (url) => {
-        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
         if (!res.ok) throw new Error("Gateway failed");
         return await res.json();
       }),

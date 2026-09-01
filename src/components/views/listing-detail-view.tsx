@@ -9,10 +9,6 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  Database,
-  ExternalLink,
-  Copy,
-  Check,
 } from "lucide-react";
 import { useAppStore, useListingsStore, useEscrowStore, useWalletStore } from "@/lib/store";
 import { StateBadge } from "@/components/state-badge";
@@ -39,7 +35,6 @@ export function ListingDetailView() {
   const wallet = useWalletStore((s) => s.wallet);
   const [isBuying, setIsBuying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [copiedCid, setCopiedCid] = useState(false);
 
   const listing = selectedId ? getById(selectedId) : undefined;
 
@@ -197,64 +192,6 @@ export function ListingDetailView() {
                 </div>
               )}
             </div>
-
-            {/* IPFS Metadata Card */}
-            {listing.cid && (
-              <div className="rounded-xl border border-border bg-card p-5 card-elevated">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Database className="size-4 text-primary" />
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                      Metadata IPFS Terdesentralisasi
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                    On-Chain Verified
-                  </span>
-                </div>
-
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  Metadata akun game ini tersimpan secara permanen dan immutable di jaringan terdesentralisasi IPFS.
-                </p>
-
-                <div className="space-y-2">
-                  <div className="p-3 rounded-lg bg-muted/30 border border-border/60">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                        IPFS CID (Content Identifier)
-                      </span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(listing.cid);
-                          setCopiedCid(true);
-                          setTimeout(() => setCopiedCid(false), 2000);
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono text-primary hover:underline"
-                      >
-                        {copiedCid ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
-                        <span>{copiedCid ? "Disalin!" : "Salin CID"}</span>
-                      </button>
-                    </div>
-                    <div className="font-mono text-xs text-foreground break-all bg-background/60 p-2 rounded border border-border/40 select-all">
-                      {listing.cid}
-                    </div>
-                  </div>
-
-                  {/* Gateway Link */}
-                  {(listing.cid.startsWith("Qm") || listing.cid.startsWith("bafy")) && (
-                    <a
-                      href={`https://gateway.pinata.cloud/ipfs/${listing.cid}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-mono pt-1"
-                    >
-                      <ExternalLink className="size-3.5" />
-                      Buka Metadata Mentah di IPFS Gateway ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Right: purchase panel */}

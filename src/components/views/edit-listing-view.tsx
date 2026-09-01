@@ -79,10 +79,16 @@ export function EditListingView() {
     setPublishing(true);
 
     try {
+      const onChainId = parseInt(listing.id.replace(/\D/g, ""), 10);
+      const listingCode = `listing-${onChainId}`;
+      const gameSlug = game.trim().toLowerCase().replace(/[^a-z0-9]/g, "-");
+
       let imageUrl = listing.imageUrl || "";
       if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop() || 'png';
+        const imageFileName = `${listingCode}-${gameSlug}-cover.${fileExt}`;
         setPublishStep("Uploading new cover image ke IPFS...");
-        const imageCid = await uploadFileToIPFS(imageFile);
+        const imageCid = await uploadFileToIPFS(imageFile, imageFileName);
         imageUrl = `ipfs://${imageCid}`;
       }
 
@@ -94,6 +100,8 @@ export function EditListingView() {
       const listingTitle = tier.trim();
 
       const metadata = {
+        id: listing.id,
+        onChainId: onChainId,
         game: game.trim(),
         title: listingTitle,
         tier: tier.trim(),
@@ -105,9 +113,10 @@ export function EditListingView() {
         image: imageUrl,
       };
       
+      const metaFileName = `${listingCode}-${gameSlug}.json`;
       let metaCid = "";
       try {
-        metaCid = await uploadMetadataToIPFS(metadata);
+        metaCid = await uploadMetadataToIPFS(metadata, metaFileName);
       } catch (e) {
         console.warn("IPFS upload fallback", e);
       }
@@ -116,8 +125,6 @@ export function EditListingView() {
       const base64Cid = `data:application/json;base64,${btoa(unescape(encodeURIComponent(jsonStr)))}`;
 
       setPublishStep("Memperbarui data di smart contract...");
-      // Ambil angka id dari "L-001" -> 1
-      const onChainId = parseInt(listing.id.replace(/\D/g, ""), 10);
       await updateListingOnChain(onChainId, Number(priceMatic.toFixed(4)), base64Cid);
 
       updateListingDetails(listing.id, {

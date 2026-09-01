@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type {
   EscrowState,
   EscrowTransaction,
@@ -32,76 +31,68 @@ const DEFAULT_WALLET: WalletInfo = {
   status: "disconnected",
 };
 
-export const useWalletStore = create<WalletStore>()(
-  persist(
-    (set) => ({
-      wallet: DEFAULT_WALLET,
-      connect: async () => {
-        set((s) => ({ wallet: { ...s.wallet, status: "connecting" } }));
-        try {
-          if (typeof window === "undefined" || !window.ethereum) {
-            throw new Error("MetaMask / Web3 Wallet tidak ditemukan. Silakan install extension wallet di browser Anda.");
+export const useWalletStore = create<WalletStore>()((set) => ({
+  wallet: DEFAULT_WALLET,
+  connect: async () => {
+    set((s) => ({ wallet: { ...s.wallet, status: "connecting" } }));
+    try {
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("MetaMask / Web3 Wallet tidak ditemukan. Silakan install extension wallet di browser Anda.");
+      }
+      const { switchNetworkToAmoy } = await import("./web3");
+      await switchNetworkToAmoy();
+      
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const ethers = (await import("ethers")).ethers;
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const network = await provider.getNetwork();
+      const balanceWei = await provider.getBalance(accounts[0]);
+      
+      // Listen for account changes to auto-sync!
+      (window.ethereum as any).on("accountsChanged", async (newAccounts: string[]) => {
+        if (!newAccounts || newAccounts.length === 0) {
+          set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
+        } else {
+          try {
+            const newBal = await provider.getBalance(newAccounts[0]);
+            set((s) => ({
+              wallet: {
+                ...s.wallet,
+                address: newAccounts[0],
+                balanceMatic: Number(ethers.formatEther(newBal)),
+                status: "connected",
+              },
+            }));
+          } catch (err) {
+            set((s) => ({
+              wallet: {
+                ...s.wallet,
+                address: newAccounts[0],
+                status: "connected",
+              },
+            }));
           }
-          const { switchNetworkToAmoy } = await import("./web3");
-          await switchNetworkToAmoy();
-          
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-          const ethers = (await import("ethers")).ethers;
-          const provider = new ethers.BrowserProvider(window.ethereum as any);
-          const network = await provider.getNetwork();
-          const balanceWei = await provider.getBalance(accounts[0]);
-          
-          // Listen for account changes to auto-sync!
-          (window.ethereum as any).on("accountsChanged", async (newAccounts: string[]) => {
-            if (!newAccounts || newAccounts.length === 0) {
-              set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
-            } else {
-              try {
-                const newBal = await provider.getBalance(newAccounts[0]);
-                set((s) => ({
-                  wallet: {
-                    ...s.wallet,
-                    address: newAccounts[0],
-                    balanceMatic: Number(ethers.formatEther(newBal)),
-                    status: "connected",
-                  },
-                }));
-              } catch (err) {
-                set((s) => ({
-                  wallet: {
-                    ...s.wallet,
-                    address: newAccounts[0],
-                    status: "connected",
-                  },
-                }));
-              }
-            }
-          });
-          
-          set((s) => ({
-            wallet: {
-              address: accounts[0],
-              chainId: "0x" + network.chainId.toString(16),
-              networkName: network.name,
-              balanceMatic: Number(ethers.formatEther(balanceWei)),
-              status: "connected",
-            },
-          }));
-        } catch (err) {
-          console.error("Connection failed", err);
-          set((s) => ({ wallet: { ...s.wallet, status: "error" } }));
         }
-      },
-      disconnect: () => {
-        set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
-      },
-    }),
-    {
-      name: "escrowchain-wallet",
-      partialize: (s) => ({ wallet: { ...s.wallet, status: "disconnected" } }),
-    },
-  ),
-);
+      });
+      
+      set((s) => ({
+        wallet: {
+          address: accounts[0],
+          chainId: "0x" + network.chainId.toString(16),
+          networkName: network.name,
+          balanceMatic: Number(ethers.formatEther(balanceWei)),
+          status: "connected",
+        },
+      }));
+    } catch (err) {
+      console.error("Connection failed", err);
+      set((s) => ({ wallet: { ...s.wallet, status: "error" } }));
+    }
+  },
+  disconnect: () => {
+    set((s) => ({ wallet: { ...s.wallet, status: "disconnected" } }));
+  },
+}));
 
 // =====================================================================
 // App store — view navigation, current listing, current tx, modals
@@ -120,35 +111,28 @@ interface AppStore {
   openTransaction: (id: string) => void;
 }
 
-export const useAppStore = create<AppStore>()(
-  persist(
-    (set) => ({
-      view: "home",
-      transactionsTab: "active",
-      selectedListingId: null,
-      editListingId: null,
-      selectedTransactionId: null,
-      setView: (v) => set({ view: v }),
-      setTransactionsTab: (t) => set({ transactionsTab: t }),
-      openListing: (id) =>
-        set({ selectedListingId: id, view: "listing-detail" }),
-      openEditListing: (id) =>
-        set({ editListingId: id, view: "edit-listing" }),
-      openTransaction: (id) => {
-        const tx = useEscrowStore.getState().transactions.find((t) => t.id === id);
-        const isActive = tx && (tx.state === "HELD" || tx.state === "REFUND_REQUESTED" || tx.state === "DEPOSITED");
-        set({
-          selectedTransactionId: id,
-          view: "transactions",
-          transactionsTab: isActive ? "active" : "history",
-        });
-      },
-    }),
-    {
-      name: "escrowchain-app-state",
-    }
-  )
-);
+export const useAppStore = create<AppStore>()((set) => ({
+  view: "home",
+  transactionsTab: "active",
+  selectedListingId: null,
+  editListingId: null,
+  selectedTransactionId: null,
+  setView: (v) => set({ view: v }),
+  setTransactionsTab: (t) => set({ transactionsTab: t }),
+  openListing: (id) =>
+    set({ selectedListingId: id, view: "listing-detail" }),
+  openEditListing: (id) =>
+    set({ editListingId: id, view: "edit-listing" }),
+  openTransaction: (id) => {
+    const tx = useEscrowStore.getState().transactions.find((t) => t.id === id);
+    const isActive = tx && (tx.state === "HELD" || tx.state === "REFUND_REQUESTED" || tx.state === "DEPOSITED");
+    set({
+      selectedTransactionId: id,
+      view: "transactions",
+      transactionsTab: isActive ? "active" : "history",
+    });
+  },
+}));
 
 // =====================================================================
 // Listings store
@@ -164,69 +148,62 @@ interface ListingsStore {
   syncListings: () => Promise<void>;
 }
 
-export const useListingsStore = create<ListingsStore>()(
-  persist(
-    (set, get) => ({
-      listings: [],
-      isSyncing: false,
-      createListing: (data, onChainId) => {
-        const id = `L-${String(onChainId).padStart(3, "0")}`;
-        const newListing: Listing = {
-          ...data,
-          id,
-          status: "AVAILABLE",
-          createdAt: Date.now(),
-        };
-        set((s) => ({ listings: [newListing, ...s.listings] }));
-        return id;
-      },
-      updateListingDetails: (id, updates) => {
-        set((s) => ({
-          listings: s.listings.map((l) =>
-            l.id === id ? { ...l, ...updates } : l
-          ),
-        }));
-      },
-      getById: (id) => get().listings.find((l) => l.id === id),
-      updateListingStatus: (id, status) => {
-        set((s) => ({
-          listings: s.listings.map((l) =>
-            l.id === id ? { ...l, status } : l
-          ),
-        }));
-      },
-      syncListings: async () => {
-        set({ isSyncing: true });
-        try {
-          const { fetchAllListingsFromChain } = await import("./web3");
-          const onChainListings = await fetchAllListingsFromChain();
-          
-          const persistedListings = get().listings;
-          const mergedListings = [...persistedListings];
-          
-          onChainListings.forEach((enriched) => {
-            const index = mergedListings.findIndex((l) => l.id === enriched.id);
-            if (index !== -1) {
-              mergedListings[index] = enriched;
-            } else {
-              mergedListings.push(enriched);
-            }
-          });
-          
-          mergedListings.sort((a, b) => b.createdAt - a.createdAt);
-          
-          set({ listings: mergedListings, isSyncing: false });
-        } catch (err) {
-          console.error("Failed to sync listings", err);
-          set({ isSyncing: false });
+export const useListingsStore = create<ListingsStore>()((set, get) => ({
+  listings: [],
+  isSyncing: false,
+  createListing: (data, onChainId) => {
+    const id = `L-${String(onChainId).padStart(3, "0")}`;
+    const newListing: Listing = {
+      ...data,
+      id,
+      status: "AVAILABLE",
+      createdAt: Date.now(),
+    };
+    set((s) => ({ listings: [newListing, ...s.listings] }));
+    return id;
+  },
+  updateListingDetails: (id, updates) => {
+    set((s) => ({
+      listings: s.listings.map((l) =>
+        l.id === id ? { ...l, ...updates } : l
+      ),
+    }));
+  },
+  getById: (id) => get().listings.find((l) => l.id === id),
+  updateListingStatus: (id, status) => {
+    set((s) => ({
+      listings: s.listings.map((l) =>
+        l.id === id ? { ...l, status } : l
+      ),
+    }));
+  },
+  syncListings: async () => {
+    set({ isSyncing: true });
+    try {
+      const { fetchAllListingsFromChain } = await import("./web3");
+      const onChainListings = await fetchAllListingsFromChain();
+      
+      const currentListings = get().listings;
+      const mergedListings = [...currentListings];
+      
+      onChainListings.forEach((enriched) => {
+        const index = mergedListings.findIndex((l) => l.id === enriched.id);
+        if (index !== -1) {
+          mergedListings[index] = enriched;
+        } else {
+          mergedListings.push(enriched);
         }
-      },
-    }),
-    {
-      name: "escrowchain-listings",
+      });
+      
+      mergedListings.sort((a, b) => b.createdAt - a.createdAt);
+      
+      set({ listings: mergedListings, isSyncing: false });
+    } catch (err) {
+      console.error("Failed to sync listings", err);
+      set({ isSyncing: false });
     }
-  )
-);
+  },
+}));
 
 // =====================================================================
 // Escrow store — FSM state machine
@@ -288,9 +265,7 @@ function makeEvent(
   };
 }
 
-export const useEscrowStore = create<EscrowStore>()(
-  persist(
-    (set, get) => ({
+export const useEscrowStore = create<EscrowStore>()((set, get) => ({
       transactions: [],
       isSyncing: false,
       getById: (id) => get().transactions.find((t) => t.id === id),
@@ -539,9 +514,4 @@ export const useEscrowStore = create<EscrowStore>()(
           set({ isSyncing: false });
         }
       },
-    }),
-    {
-      name: "escrowchain-transactions",
-    }
-  )
-);
+    }));

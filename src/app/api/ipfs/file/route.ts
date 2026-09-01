@@ -25,6 +25,8 @@ export async function POST(request: Request) {
 
   const input = await request.formData();
   const file = input.get("file");
+  const customName = input.get("name") as string | null;
+
   if (!(file instanceof File) || !file.type.startsWith("image/")) {
     return NextResponse.json({ error: "File gambar tidak valid." }, { status: 400 });
   }
@@ -33,7 +35,12 @@ export async function POST(request: Request) {
   }
 
   const body = new FormData();
-  body.append("file", file, file.name);
+  const fileName = customName || file.name || "image.png";
+  body.append("file", file, fileName);
+
+  if (customName) {
+    body.append("pinataMetadata", JSON.stringify({ name: customName }));
+  }
 
   const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
     method: "POST",
