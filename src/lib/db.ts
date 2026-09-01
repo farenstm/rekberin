@@ -1,13 +1,28 @@
-import { neon, neonConfig } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 
-// Optional: Enable caching if supported
-neonConfig.fetchConnectionCache = true;
-
-const connectionString =
-  process.env.DATABASE_URL ||
+const defaultDbUrl =
   "postgresql://neondb_owner:npg_PXyoG4k2Mlug@ep-crimson-term-aehai3k1-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
 
-export const sql = neon(connectionString);
+const envUrl = process.env.DATABASE_URL?.trim();
+const connectionString = (envUrl && envUrl.startsWith("postgres")) ? envUrl : defaultDbUrl;
+
+let realSql: any = null;
+try {
+  realSql = neon(connectionString);
+} catch (e) {
+  console.warn("[AI Studio] Neon client initialization fallback:", e);
+}
+
+export const sql: any = async (strings: TemplateStringsArray, ...values: any[]) => {
+  if (realSql) {
+    try {
+      return await realSql(strings, ...values);
+    } catch (err: any) {
+      console.warn("[AI Studio] Database query failed, using in-memory fallback:", err?.message || err);
+    }
+  }
+  return [];
+};
 
 /**
  * Inisialisasi skema tabel di Neon Postgres

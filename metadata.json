@@ -1,0 +1,6 @@
+{
+  "name": "RekberIn",
+  "description": "Smart Contract Escrow Marketplace for secure peer-to-peer digital transactions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

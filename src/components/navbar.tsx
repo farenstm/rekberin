@@ -35,20 +35,23 @@ export function Navbar() {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      return (
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark"
+      );
+    }
+    return false;
+  });
 
-  // Initialize theme from document or localStorage
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark") ||
-      localStorage.getItem("theme") === "dark";
-    if (isDarkMode) {
+    if (isDark) {
       document.documentElement.classList.add("dark");
-      setIsDark(true);
     } else {
       document.documentElement.classList.remove("dark");
-      setIsDark(false);
     }
-  }, []);
+  }, [isDark]);
 
   const toggleTheme = () => {
     if (isDark) {

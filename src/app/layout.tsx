@@ -32,6 +32,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var _curFetch = window.fetch;
+                  Object.defineProperty(window, 'fetch', {
+                    get: function() { return _curFetch; },
+                    set: function(f) { _curFetch = f; },
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground min-h-screen`}
         suppressHydrationWarning
