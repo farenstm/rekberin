@@ -331,12 +331,17 @@ export function EscrowDetailContent({
                   <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
                     {tx.listing?.game || "Game"}
                   </div>
+                  {tx.listing?.cid && (
+                    <div className="mt-1 text-[9px] font-mono text-muted-foreground truncate">
+                      CID: <span className="text-primary">{tx.listing.cid.slice(0, 14)}...</span>
+                    </div>
+                  )}
                   {tx.listing?.id && (
                     <button
                       onClick={() => useAppStore.getState().openListing(tx.listing.id)}
                       className="mt-1.5 flex items-center gap-1 text-[10px] text-primary hover:underline"
                     >
-                      View listing
+                      Buka Detail Listing
                       <ExternalLink className="size-2.5" />
                     </button>
                   )}

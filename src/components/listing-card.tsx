@@ -100,9 +100,14 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
           </div>
         </div>
 
-        {/* Seller + time */}
+        {/* Seller + IPFS CID + time */}
         <div className="flex items-center justify-between pt-1 text-[10px] text-muted-foreground/70 font-mono">
-          <span>{listing.sellerName}</span>
+          <span className="truncate max-w-[120px]">{listing.sellerName}</span>
+          {listing.cid && (
+            <span className="px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20 text-[9px] truncate max-w-[100px]" title={listing.cid}>
+              IPFS: {listing.cid.startsWith("Qm") || listing.cid.startsWith("bafy") ? `${listing.cid.slice(0, 6)}...` : "Data URI"}
+            </span>
+          )}
           <span>{timeAgo(listing.createdAt)}</span>
         </div>
       </div>
