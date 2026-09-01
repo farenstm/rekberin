@@ -51,10 +51,10 @@ export function HowItWorksView() {
       <section className="px-4 md:px-6 py-12 max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            Happy Path — Successful Transaction
+            Alur Normal — Transaksi Berhasil
           </span>
           <h2 className="text-xl md:text-2xl font-bold mt-2">
-            Alur normal (release)
+            Alur Standar (Pelepasan Dana)
           </h2>
         </div>
 

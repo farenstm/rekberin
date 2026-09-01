@@ -9,8 +9,10 @@ import {
   Info,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
 import type { ViewId } from "@/lib/types";
@@ -22,20 +24,46 @@ const NAV_ITEMS: Array<{
   icon: typeof Shield;
   description: string;
 }> = [
-  { id: "home", label: "Home", icon: Shield, description: "Homepage" },
-  { id: "marketplace", label: "Marketplace", icon: Store, description: "Browse listings" },
-  { id: "transactions", label: "Transactions", icon: Receipt, description: "Escrow, history, contract" },
-  { id: "how-it-works", label: "How It Works", icon: BookOpen, description: "Cara kerja escrow" },
-  { id: "about", label: "About", icon: Info, description: "Tentang sistem" },
+  { id: "home", label: "Beranda", icon: Shield, description: "Halaman utama" },
+  { id: "marketplace", label: "Marketplace", icon: Store, description: "Jelajahi akun game" },
+  { id: "transactions", label: "Transaksi", icon: Receipt, description: "Escrow aktif & riwayat" },
+  { id: "how-it-works", label: "Cara Kerja", icon: BookOpen, description: "Alur escrow smart contract" },
+  { id: "about", label: "Tentang", icon: Info, description: "Tentang platform RekberIn" },
 ];
 
 export function Navbar() {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  // Initialize theme from document or localStorage
+  useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains("dark") ||
+      localStorage.getItem("theme") === "dark";
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    } else {
+      document.documentElement.classList.remove("dark");
+      setIsDark(false);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setIsDark(true);
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <button
@@ -45,11 +73,11 @@ export function Navbar() {
           }}
           className="flex items-center gap-2.5 shrink-0 group"
         >
-          <div className="size-8 rounded-lg bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center border border-primary/30 glow-primary">
+          <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center border border-primary/30 shadow-sm">
             <Shield className="size-4 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col items-start leading-none">
-            <span className="font-semibold text-sm tracking-tight">
+            <span className="font-semibold text-sm tracking-tight text-foreground">
               RekberIn
             </span>
             <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
@@ -79,13 +107,13 @@ export function Navbar() {
                 <item.icon className="size-3.5" />
                 {item.label}
                 {active && (
-                  <span className="absolute -bottom-[1px] left-3 right-3 h-px bg-primary/60" />
+                  <span className="absolute -bottom-[1px] left-3 right-3 h-0.5 bg-primary rounded-full" />
                 )}
               </button>
             );
           })}
 
-          {/* Create Listing as action button */}
+          {/* Jual Akun / Buat Listing */}
           <button
             onClick={() => {
               useAppStore.setState({ selectedTransactionId: null });
@@ -94,17 +122,29 @@ export function Navbar() {
             className={cn(
               "ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-all",
               view === "create-listing"
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:border-primary/30",
+                ? "border-primary bg-primary/10 text-primary font-semibold"
+                : "border-border bg-card text-foreground hover:bg-muted/50 hover:border-primary/40",
             )}
           >
-            <PlusSquare className="size-3.5" />
-            Create
+            <PlusSquare className="size-3.5 text-primary" />
+            Jual Akun
           </button>
         </nav>
 
+        {/* Action buttons: Theme Toggle + Wallet Button */}
         <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="size-9 rounded-md border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+            title={isDark ? "Ubah ke Mode Terang (Background Putih)" : "Ubah ke Mode Gelap"}
+            aria-label="Toggle tema tampilan"
+          >
+            {isDark ? <Sun className="size-4 text-warning" /> : <Moon className="size-4 text-foreground" />}
+          </button>
+
           <WalletButton />
+
           <button
             className="lg:hidden size-9 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30"
             onClick={() => setMobileOpen((v) => !v)}
@@ -132,14 +172,14 @@ export function Navbar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all",
                     active
-                      ? "bg-muted/60 text-foreground"
+                      ? "bg-muted/60 text-foreground font-semibold"
                       : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                   )}
                 >
-                  <item.icon className="size-4" />
+                  <item.icon className="size-4 text-primary" />
                   <div className="flex flex-col items-start">
                     <span>{item.label}</span>
-                    <span className="text-[10px] text-muted-foreground/70">
+                    <span className="text-[10px] text-muted-foreground">
                       {item.description}
                     </span>
                   </div>
@@ -155,15 +195,15 @@ export function Navbar() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm border transition-all",
                 view === "create-listing"
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:bg-muted/30 hover:text-foreground",
+                  ? "border-primary bg-primary/10 text-primary font-semibold"
+                  : "border-border text-foreground hover:bg-muted/30",
               )}
             >
-              <PlusSquare className="size-4" />
+              <PlusSquare className="size-4 text-primary" />
               <div className="flex flex-col items-start">
-                <span>Create Listing</span>
-                <span className="text-[10px] text-muted-foreground/70">
-                  Publish new listing
+                <span>Jual Akun Game</span>
+                <span className="text-[10px] text-muted-foreground">
+                  Buat dan publikasikan listing baru
                 </span>
               </div>
             </button>

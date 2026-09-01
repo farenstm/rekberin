@@ -176,7 +176,7 @@ export function EscrowDetailContent({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  {isHistory ? "Transaction Detail" : "Current Escrow"}
+                  {isHistory ? "Detail Transaksi" : "Transaksi Escrow"}
                 </span>
                 <span className="font-mono text-sm font-semibold text-foreground/80">
                   #{tx.id.replace("#", "")}
@@ -185,7 +185,7 @@ export function EscrowDetailContent({
 
               {/* Big status narrative */}
               <div>
-                <h2 className="text-2xl md:text-4xl font-bold leading-tight">
+                <h2 className="text-2xl md:text-4xl font-bold leading-tight text-foreground">
                   {statusNarrative.title}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2 max-w-md">
@@ -196,7 +196,7 @@ export function EscrowDetailContent({
               {/* Big state badge */}
               <div className="flex items-center gap-2 pt-1">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Current State
+                  Status FSM
                 </span>
                 <StateBadge
                   state={tx.state}
@@ -210,7 +210,7 @@ export function EscrowDetailContent({
             <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
               <div className="text-right">
                 <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                  Escrowed Amount
+                  Nominal Dana Escrow
                 </div>
                 <div className="font-mono-num text-2xl font-bold text-primary">
                   {formatMATIC(tx.amountMatic)}
@@ -221,7 +221,7 @@ export function EscrowDetailContent({
               </div>
               <div className="text-right pt-2 border-t border-border/60 md:w-full">
                 <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-                  Last Update
+                  Pembaruan Terakhir
                 </div>
                 <div className="font-mono text-xs text-foreground/70">
                   {timeAgo(tx.updatedAt)}
@@ -242,10 +242,10 @@ export function EscrowDetailContent({
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-                    Escrow Timeline
+                    Alur Transaksi Escrow
                   </div>
                   <h3 className="text-base font-semibold">
-                    Finite State Machine
+                    Status State Machine
                   </h3>
                 </div>
                 <FSMCompactView state={tx.state} />
@@ -262,12 +262,12 @@ export function EscrowDetailContent({
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-                    Event Log
+                    Log Aktivitas
                   </div>
-                  <div className="text-base font-semibold">On-chain events</div>
+                  <div className="text-base font-semibold">Log Event Blockchain</div>
                 </div>
                 <span className="text-[10px] font-mono text-muted-foreground">
-                  {(tx.events || []).length} events
+                  {(tx.events || []).length} event
                 </span>
               </div>
 
@@ -284,13 +284,13 @@ export function EscrowDetailContent({
             {/* Parties */}
             <div className="rounded-xl border border-border bg-card p-4 card-elevated">
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3">
-                Parties
+                Pihak Terlibat
               </div>
 
               <PartyRow
-                role="Buyer"
+                role="Pembeli"
                 address={tx.buyer}
-                label={isBuyer ? "Anda (current wallet)" : "Buyer"}
+                label={isBuyer ? "Anda (Wallet Aktif)" : "Pembeli"}
                 icon={isBuyer ? Wallet : User}
                 tone="info"
               />
@@ -300,9 +300,9 @@ export function EscrowDetailContent({
                 <div className="h-px flex-1 bg-border" />
               </div>
               <PartyRow
-                role="Seller"
+                role="Penjual"
                 address={tx.seller}
-                label={isSeller ? "Anda (current wallet)" : (tx.listing?.sellerName || "Seller")}
+                label={isSeller ? "Anda (Wallet Aktif)" : (tx.listing?.sellerName || "Penjual")}
                 icon={isSeller ? Wallet : User}
                 tone="warning"
               />
@@ -374,43 +374,43 @@ function getStatusNarrative(state: EscrowState): {
   switch (state) {
     case "DEPOSITED":
       return {
-        title: "Waiting seller confirmation",
+        title: "Menunggu Pengiriman Akun",
         subtitle:
-          "Buyer sudah deposit. Menunggu seller konfirmasi bahwa akun siap dikirim.",
+          "Pembeli telah melakukan deposit. Menunggu penjual mengirimkan data akun.",
       };
     case "HELD":
       return {
-        title: "Waiting buyer confirmation",
+        title: "Menunggu Konfirmasi Pembeli",
         subtitle:
-          "Dana di-hold smart contract. Seller sudah kirim akun. Buyer konfirmasi penerimaan untuk release, atau request refund.",
+          "Dana aman di-hold oleh Smart Contract. Pembeli memeriksa akun lalu konfirmasi untuk melepas dana atau mengajukan refund.",
       };
     case "REFUND_REQUESTED":
       return {
-        title: "Refund requested — waiting seller",
+        title: "Permintaan Refund Diajukan",
         subtitle:
-          "Buyer minta refund. Seller harus approve atau reject. Kalau approve, dana kembali ke buyer.",
+          "Pembeli meminta pengembalian dana. Penjual dapat menyetujui atau menolak permohonan refund.",
       };
     case "RELEASED":
       return {
-        title: "Transaction completed",
+        title: "Transaksi Selesai & Dana Dilepas",
         subtitle:
-          "Dana sudah dilepas ke seller. Escrow selesai. Listing kini SOLD.",
+          "Dana telah berhasil diteruskan ke wallet penjual. Transaksi escrow selesai.",
       };
     case "REFUNDED":
       return {
-        title: "Refund processed",
+        title: "Dana Telah Dikembalikan",
         subtitle:
-          "Dana dikembalikan ke buyer. Listing kembali AVAILABLE di marketplace.",
+          "Dana telah dikembalikan ke wallet pembeli. Listing akun kembali tersedia di marketplace.",
       };
     case "DISPUTED":
       return {
-        title: "Dispute opened",
-        subtitle: "Transaksi dalam sengketa. Menunggu arbitrator.",
+        title: "Sengketa Dibuka",
+        subtitle: "Transaksi dalam mediasi sengketa.",
       };
     default:
       return {
-        title: "No active escrow",
-        subtitle: "Belum ada transaksi escrow aktif.",
+        title: "Tidak Ada Transaksi Aktif",
+        subtitle: "Saat ini tidak ada transaksi escrow yang sedang berjalan.",
       };
   }
 }
@@ -427,7 +427,7 @@ function SellerContactsCard({ listing }: { listing?: Listing }) {
       <div className="flex items-center gap-2 mb-3">
         <MessageCircle className="size-3.5 text-warning" />
         <span className="text-[10px] font-mono uppercase tracking-wider text-warning font-semibold">
-          Seller Contacts — Off-chain Delivery
+          Kontak Penjual — Penyerahan Akun
         </span>
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">

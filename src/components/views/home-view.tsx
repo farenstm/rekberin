@@ -117,42 +117,42 @@ export function HomeView() {
                     setView("transactions");
                     setTransactionsTab("active");
                   }}
-                  className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition-all glow-primary"
+                  className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition-all shadow-sm"
                 >
                   <Shield className="size-4" />
-                  Lihat Escrow Dashboard
+                  Buka Dashboard Escrow
                   <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
                 </button>
                 <button
                   onClick={() => setView("marketplace")}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 text-sm font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-muted/60 text-sm font-medium transition-all"
                 >
-                  Browse Marketplace
+                  Jelajahi Marketplace
                 </button>
               </div>
 
               {/* Stats strip */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-10 pt-6 border-t border-border/40">
                 <StatBox
-                  label="Total Released"
+                  label="Total Dana Dilepas"
                   value={formatMATIC(totalVolume)}
-                  sub={`${releasedCount} tx`}
+                  sub={`${releasedCount} transaksi`}
                   tone="success"
                 />
                 <StatBox
-                  label="In Escrow"
+                  label="Sedang Di-Hold"
                   value={formatMATIC(totalEscrow)}
-                  sub={`${transactions.filter((t) => t.state === "HELD").length} held`}
+                  sub={`${transactions.filter((t) => t.state === "HELD").length} aktif`}
                   tone="warning"
                 />
                 <StatBox
-                  label="Active Listings"
+                  label="Listing Aktif"
                   value={String(listings.length)}
-                  sub="marketplace"
+                  sub="di marketplace"
                   tone="info"
                 />
                 <StatBox
-                  label="Refund Rate"
+                  label="Rasio Refund"
                   value={`${refundedCount}/${releasedCount + refundedCount}`}
                   sub="on-chain"
                   tone="muted"
@@ -215,37 +215,39 @@ function CurrentEscrowPreview({
 }) {
   const narrative =
     state === "HELD"
-      ? "Waiting Buyer Confirmation"
+      ? "Menunggu Konfirmasi Pembeli"
       : state === "DEPOSITED"
-        ? "Waiting Seller Confirmation"
+        ? "Menunggu Pengiriman Akun"
         : state === "RELEASED"
-          ? "Transaction Completed"
+          ? "Transaksi Selesai & Dana Dilepas"
           : state === "REFUNDED"
-            ? "Refund Processed"
-            : "Active";
+            ? "Dana Berhasil Dikembalikan"
+            : state === "REFUND_REQUESTED"
+              ? "Permintaan Refund Diajukan"
+              : "Transaksi Berjalan";
 
   return (
     <button
       onClick={onOpen}
-      className="group block w-full text-left rounded-2xl border border-primary/30 bg-card p-5 hover:border-primary/50 hover:bg-card/80 transition-all card-elevated glow-primary"
+      className="group block w-full text-left rounded-2xl border border-primary/30 bg-card p-5 hover:border-primary/50 hover:bg-card/80 transition-all card-elevated"
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-[10px] font-mono uppercase tracking-wider text-primary font-semibold">
-          ● Current Escrow
+          ● Escrow Sedang Berjalan
         </span>
         <span className="font-mono text-[10px] text-muted-foreground">
           {txId}
         </span>
       </div>
 
-      <h3 className="text-xl font-bold leading-tight mb-1">{narrative}</h3>
+      <h3 className="text-xl font-bold leading-tight mb-1 text-foreground">{narrative}</h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Updated {timeAgo(updatedAt)}
+        Diperbarui {timeAgo(updatedAt)}
       </p>
 
       <div className="flex items-center gap-2 mb-4">
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          State
+          Status FSM
         </span>
         <StateBadge state={state} size="md" pulse={state === "HELD" || state === "DEPOSITED"} />
       </div>
@@ -266,9 +268,9 @@ function CurrentEscrowPreview({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium line-clamp-1">{listingTitle}</div>
+          <div className="text-xs font-medium line-clamp-1 text-foreground">{listingTitle}</div>
           <div className="text-[10px] font-mono text-muted-foreground">
-            Seller: {sellerName}
+            Penjual: {sellerName}
           </div>
         </div>
       </div>
@@ -277,14 +279,14 @@ function CurrentEscrowPreview({
       <div className="flex items-end justify-between pt-3 border-t border-border/40">
         <div>
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-            Amount
+            Nominal Transaksi
           </div>
           <div className="font-mono-num text-base font-bold text-primary">
             {formatMATIC(amount)}
           </div>
         </div>
         <div className="flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
-          Open Dashboard
+          Buka Dashboard
           <ArrowRight className="size-3.5" />
         </div>
       </div>

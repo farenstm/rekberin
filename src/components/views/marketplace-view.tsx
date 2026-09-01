@@ -7,7 +7,7 @@ import { ListingCard } from "@/components/listing-card";
 import { cn } from "@/lib/utils";
 
 const GAMES = [
-  "All",
+  "Semua",
   "Mobile Legends",
   "Valorant",
   "Genshin Impact",
@@ -16,9 +16,9 @@ const GAMES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "price-low", label: "Price: Low → High" },
-  { value: "price-high", label: "Price: High → Low" },
+  { value: "newest", label: "Terbaru" },
+  { value: "price-low", label: "Harga: Terendah → Tertinggi" },
+  { value: "price-high", label: "Harga: Tertinggi → Terendah" },
 ];
 
 export function MarketplaceView() {
@@ -135,14 +135,14 @@ export function MarketplaceView() {
       <div className="px-4 md:px-6 py-8 max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs text-muted-foreground font-mono">
-            {filtered.length} listing{filtered.length !== 1 ? "s" : ""} found
+            {filtered.length} produk listing ditemukan
           </span>
           <button
             onClick={() => setView("create-listing")}
             className="md:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/30 text-xs font-medium"
           >
             <PlusSquare className="size-3.5 text-primary" />
-            Create
+            Jual Akun
           </button>
         </div>
 

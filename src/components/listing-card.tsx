@@ -83,7 +83,7 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
         <div className="flex items-end justify-between pt-2 border-t border-border/60">
           <div className="flex flex-col leading-none">
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-              Price
+              Harga
             </span>
             <span className="font-mono-num font-semibold text-base text-foreground">
               {formatIDR(listing.priceIDR)}
@@ -94,7 +94,7 @@ export function ListingCard({ listing, compact = false }: ListingCardProps) {
           </div>
           <div className="flex items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
             <span className="text-[10px] font-mono uppercase tracking-wider">
-              View
+              Lihat
             </span>
             <ArrowUpRight className="size-3.5" />
           </div>

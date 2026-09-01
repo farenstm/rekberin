@@ -220,7 +220,7 @@ export function ListingDetailView() {
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
-                      Posted
+                      Dipublikasikan
                     </div>
                     <div className="font-mono text-xs text-foreground/70">
                       {timeAgo(listing.createdAt)}
@@ -246,7 +246,7 @@ export function ListingDetailView() {
                   wallet.status === "connected" && isSameAddress(wallet.address, listing.seller) ? (
                     <>
                       <AlertCircle className="size-4" />
-                      Milik Anda Sendiri
+                      Listing Milik Anda Sendiri
                     </>
                   ) : (
                     <>
@@ -257,7 +257,7 @@ export function ListingDetailView() {
                 ) : (
                   <>
                     <AlertCircle className="size-4" />
-                    {listing.status === "LOCKED" ? "In Escrow" : "Sold"}
+                    {listing.status === "LOCKED" ? "Sedang Di-Escrow" : "Terjual"}
                   </>
                 )}
               </button>
@@ -287,8 +287,7 @@ export function ListingDetailView() {
               <div className="mt-3 p-3 rounded-lg bg-muted/20 border border-border/50 flex items-start gap-2.5">
                 <Shield className="size-4 text-primary shrink-0 mt-0.5" />
                 <div className="text-[11px] text-muted-foreground leading-relaxed">
-                  Pembayaran dijamin smart contract. Dana di-hold sampai Anda
-                  konfirmasi penerimaan akun.
+                  Pembayaran dijamin Smart Contract. Dana di-hold secara aman sampai Anda mengonfirmasi penerimaan data akun.
                 </div>
               </div>
             </div>
@@ -296,7 +295,7 @@ export function ListingDetailView() {
             {/* Seller info */}
             <div className="rounded-xl border border-border bg-card p-5">
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 block">
-                Seller
+                Informasi Penjual
               </span>
               <div className="flex items-center gap-3 mb-4">
                 <div className="size-10 rounded-full bg-gradient-to-br from-primary/40 to-primary/10 flex items-center justify-center border border-primary/30">

@@ -27,11 +27,11 @@ import type { EscrowState } from "@/lib/types";
 import { EscrowDetailContent } from "./escrow-dashboard-view";
 
 const STATE_FILTERS: Array<{ value: EscrowState | "ALL"; label: string }> = [
-  { value: "ALL", label: "All" },
-  { value: "HELD", label: "Held" },
-  { value: "REFUND_REQUESTED", label: "Refund Requested" },
-  { value: "RELEASED", label: "Released" },
-  { value: "REFUNDED", label: "Refunded" },
+  { value: "ALL", label: "Semua" },
+  { value: "HELD", label: "Sedang Di-Hold" },
+  { value: "REFUND_REQUESTED", label: "Permintaan Refund" },
+  { value: "RELEASED", label: "Selesai (Dilepas)" },
+  { value: "REFUNDED", label: "Dikembalikan (Refund)" },
 ];
 
 export function HistoryView() {
@@ -40,48 +40,43 @@ export function HistoryView() {
   const openTransaction = useAppStore((s) => s.openTransaction);
   const [filter, setFilter] = useState<EscrowState | "ALL">("ALL");
 
-  const allTransactions = useMemo(() => {
-    return (transactions || []).filter((t) => Boolean(t));
+  const sorted = useMemo(() => {
+    return [...(transactions || [])].sort((a, b) => ((b && b.createdAt) || 0) - ((a && a.createdAt) || 0));
+  }, [transactions]);
+
+  const filtered = useMemo(() => {
+    if (filter === "ALL") return sorted;
+    return sorted.filter((t) => t && t.state === filter);
+  }, [sorted, filter]);
+
+  const stats = useMemo(() => {
+    const total = (transactions || []).length;
+    const held = (transactions || []).filter((t) => t && t.state === "HELD").length;
+    const released = (transactions || []).filter((t) => t && t.state === "RELEASED").length;
+    const refunded = (transactions || []).filter((t) => t && t.state === "REFUNDED").length;
+    return { total, held, released, refunded };
   }, [transactions]);
 
   const selectedTx = useMemo(
-    () => allTransactions.find((t) => t.id === selectedTxId),
-    [allTransactions, selectedTxId],
+    () => (transactions || []).find((t) => t && t.id === selectedTxId),
+    [transactions, selectedTxId],
   );
-
-  const filtered = useMemo(() => {
-    let list = [...allTransactions].sort(
-      (a, b) => ((b && b.createdAt) || 0) - ((a && a.createdAt) || 0),
-    );
-    if (filter !== "ALL") list = list.filter((t) => t && t.state === filter);
-    return list;
-  }, [allTransactions, filter]);
-
-  const stats = useMemo(() => {
-    const total = allTransactions.length;
-    const released = allTransactions.filter((t) => t && t.state === "RELEASED").length;
-    const refunded = allTransactions.filter((t) => t && t.state === "REFUNDED").length;
-    const held = allTransactions.filter(
-      (t) => t && (t.state === "HELD" || t.state === "DEPOSITED"),
-    ).length;
-    return { total, released, refunded, held };
-  }, [allTransactions]);
 
   if (selectedTx) {
     return (
       <div className="animate-fade-slide-up">
-        {/* Back navigation header */}
-        <div className="border-b border-border/60 bg-muted/10">
-          <div className="px-4 md:px-6 py-4 max-w-6xl mx-auto flex items-center justify-between">
+        {/* Sub-header Navigation Back to History List */}
+        <div className="border-b border-border/60 bg-muted/20 px-4 md:px-6 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <button
               onClick={() => openTransaction("")}
-              className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline hover:text-primary/80 transition-colors"
             >
               <ArrowLeft className="size-4" />
-              Kembali ke Daftar Riwayat (History)
+              Kembali ke Daftar Riwayat Transaksi
             </button>
             <div className="text-xs font-mono text-muted-foreground">
-              History Detail • {selectedTx.id}
+              Detail Riwayat • {selectedTx.id}
             </div>
           </div>
         </div>
@@ -98,16 +93,15 @@ export function HistoryView() {
       <div className="border-b border-border/60 bg-muted/10">
         <div className="px-4 md:px-6 py-5 max-w-5xl mx-auto">
           <p className="text-xs text-muted-foreground max-w-2xl">
-            Semua transaksi escrow yang pernah Anda ikuti. Setiap entry adalah
-            event log on-chain.
+            Semua riwayat transaksi escrow pada sistem. Setiap data tercatat resmi secara on-chain di blockchain Polygon Amoy.
           </p>
 
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3 mt-4">
-            <StatCard label="Total" value={stats.total} tone="muted" />
-            <StatCard label="In Escrow" value={stats.held} tone="warning" />
-            <StatCard label="Released" value={stats.released} tone="success" />
-            <StatCard label="Refunded" value={stats.refunded} tone="destructive" />
+            <StatCard label="Total Transaksi" value={stats.total} tone="muted" />
+            <StatCard label="Sedang Di-Hold" value={stats.held} tone="warning" />
+            <StatCard label="Dana Dilepas" value={stats.released} tone="success" />
+            <StatCard label="Dikembalikan" value={stats.refunded} tone="destructive" />
           </div>
 
           {/* Filters */}

@@ -69,14 +69,14 @@ export function ContractStatusView() {
             <div className="flex items-center gap-2">
               <Shield className="size-4 text-primary" />
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                Contract Info
+                Informasi Smart Contract
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <MetaRow icon={Box} label="Address" value={CONTRACT_INFO.address} mono />
-            <MetaRow icon={Network} label="Network" value={CONTRACT_INFO.network} />
+            <MetaRow icon={Box} label="Alamat Kontrak" value={CONTRACT_INFO.address} mono />
+            <MetaRow icon={Network} label="Jaringan" value={CONTRACT_INFO.network} />
             <MetaRow
               icon={Cpu}
               label="Chain ID"
@@ -84,7 +84,7 @@ export function ContractStatusView() {
             />
             <MetaRow
               icon={Database}
-              label="Deploy Block"
+              label="Blok Deploy"
               value={`#${CONTRACT_INFO.deployBlock.toLocaleString()}`}
             />
           </div>
@@ -94,30 +94,30 @@ export function ContractStatusView() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <CountCard
             icon={Tag}
-            label="Total Listings"
+            label="Total Listing"
             value={listings.length}
-            sub={`${availableListings} available`}
+            sub={`${availableListings} tersedia`}
             tone="info"
           />
           <CountCard
             icon={Receipt}
-            label="Active Escrows"
+            label="Escrow Aktif"
             value={activeEscrows.length}
-            sub="in progress"
+            sub="sedang berjalan"
             tone="warning"
           />
           <CountCard
             icon={Activity}
-            label="Released"
+            label="Dana Dilepas"
             value={releasedCount}
-            sub="completed"
+            sub="selesai sukses"
             tone="success"
           />
           <CountCard
             icon={Receipt}
-            label="Refunded"
+            label="Dikembalikan"
             value={refundedCount}
-            sub="cancelled"
+            sub="refunded"
             tone="destructive"
           />
         </div>
@@ -127,14 +127,14 @@ export function ContractStatusView() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-                State Distribution
+                Distribusi Status FSM
               </div>
               <h3 className="text-base font-semibold">
-                Escrow transactions by state
+                Klasifikasi Transaksi Escrow Berdasarkan State
               </h3>
             </div>
             <span className="text-[10px] font-mono text-muted-foreground">
-              {transactions.length} total
+              Total {transactions.length} transaksi
             </span>
           </div>
 

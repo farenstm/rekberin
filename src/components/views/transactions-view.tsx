@@ -14,9 +14,9 @@ const TABS: Array<{
   icon: typeof Gauge;
   description: string;
 }> = [
-  { id: "active", label: "Active Escrow", icon: Gauge, description: "Current transaction state machine" },
-  { id: "history", label: "History", icon: HistoryIcon, description: "All past transactions" },
-  { id: "contract-status", label: "Contract Status", icon: Activity, description: "Live counts & state distribution" },
+  { id: "active", label: "Escrow Aktif", icon: Gauge, description: "Status transaksi yang sedang berjalan" },
+  { id: "history", label: "Riwayat Transaksi", icon: HistoryIcon, description: "Semua riwayat transaksi selesai" },
+  { id: "contract-status", label: "Status Kontrak", icon: Activity, description: "Statistik & distribusi smart contract" },
 ];
 
 export function TransactionsView() {
