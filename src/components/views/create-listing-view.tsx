@@ -193,7 +193,7 @@ export function CreateListingView() {
                 <option value="PUBG Mobile">PUBG Mobile</option>
               </select>
             </Field>
-            <Field label="Tier / Judul Akun" required>
+            <Field label="Tier / Rank akun" required>
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
@@ -237,7 +237,7 @@ export function CreateListingView() {
           </div>
 
           {/* Image Upload */}
-          <Field label="Foto Sampul Akun (Cover Image)" hint="Format: JPG/PNG" required>
+          <Field label="Gambar Akun yang mau dijual" hint="Format: JPG/PNG" required>
             <div className="space-y-3">
               <input
                 type="file"
@@ -340,10 +340,10 @@ export function CreateListingView() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <ChecklistItem ok={!!game} label="Kategori Game dipilih" />
-            <ChecklistItem ok={!!tier} label="Tier / Judul Akun diisi" />
+            <ChecklistItem ok={!!tier} label="Tier / Rank akun diisi" />
             <ChecklistItem ok={!!description} label="Deskripsi & Detail diisi" />
             <ChecklistItem ok={priceNum > 0} label="Harga IDR ditentukan" />
-            <ChecklistItem ok={!!imageFile} label="Foto Sampul diunggah" />
+            <ChecklistItem ok={!!imageFile} label="Gambar Akun diunggah" />
             <ChecklistItem
               ok={!!(discord || telegram || whatsapp)}
               label="Kontak Penjual terisi"

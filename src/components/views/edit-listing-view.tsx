@@ -214,7 +214,7 @@ export function EditListingView() {
                 <option value="PUBG Mobile">PUBG Mobile</option>
               </select>
             </Field>
-            <Field label="Tier / Judul Akun" required>
+            <Field label="Tier / Rank akun" required>
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
@@ -258,7 +258,7 @@ export function EditListingView() {
           </div>
 
           {/* Image Upload */}
-          <Field label="Foto Sampul Akun (Cover Image)" hint="Format: JPG/PNG. Biarkan kosong jika tidak ingin mengubah gambar." required={false}>
+          <Field label="Gambar Akun yang mau dijual" hint="Format: JPG/PNG. Biarkan kosong jika tidak ingin mengubah gambar." required={false}>
             <div className="space-y-3">
               <input
                 type="file"
