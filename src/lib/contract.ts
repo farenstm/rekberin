@@ -3,38 +3,22 @@
 // =====================================================================
 // Kode ini hanya untuk display di UI / dokumentasi skripsi.
 // Akan dideploy ke Polygon Amoy testnet pada tahap implementasi nyata.
-// =====================================================================
-
 export const ESCROW_SOLIDITY_SOURCE = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/**
- * @title EscrowChain
- * @notice Smart Contract Escrow untuk prototype marketplace akun game.
- * @dev Mengimplementasikan mekanisme escrow otomatis menggunakan perubahan state transaksi.
- */
 contract EscrowChain is ReentrancyGuard {
-    /**
-     * @dev Represents the various states of an escrow transaction.
-     */
     enum EscrowState { HELD, RELEASED, REFUND_REQUESTED, REFUNDED }
 
-    /**
-     * @dev Structure to store listing details.
-     */
     struct Listing {
         uint256 id;
         address payable seller;
         uint256 price;
-        string cid; // IPFS metadata CID
+        string cid;
         bool isActive;
     }
 
-    /**
-     * @dev Structure to store escrow details.
-     */
     struct Escrow {
         uint256 id;
         uint256 listingId;
@@ -56,21 +40,12 @@ contract EscrowChain is ReentrancyGuard {
     event ListingUpdated(uint256 indexed listingId, uint256 newPrice, string newCid);
     event ListingCancelled(uint256 indexed listingId);
     event EscrowCreated(uint256 indexed escrowId, uint256 indexed listingId, address indexed buyer, address seller, uint256 amount);
-    
-    /**
-     * @dev Emitted when an escrow changes state.
-     */
     event EscrowStateChanged(
         uint256 indexed escrowId,
         EscrowState oldState,
         EscrowState newState
     );
 
-    /**
-     * @dev Creates a new listing for sale.
-     * @param _price The price of the listing in wei.
-     * @param _cid The IPFS content identifier for the listing metadata.
-     */
     function createListing(uint256 _price, string memory _cid) external {
         require(_price > 0, "Price must be greater than 0");
         require(bytes(_cid).length > 0, "CID required");
@@ -87,12 +62,6 @@ contract EscrowChain is ReentrancyGuard {
         emit ListingCreated(listingId, msg.sender, _price, _cid);
     }
 
-    /**
-     * @dev Updates an existing listing.
-     * @param _listingId The ID of the listing to update.
-     * @param _newPrice The new price of the listing in wei.
-     * @param _newCid The new IPFS content identifier for the listing metadata.
-     */
     function updateListing(uint256 _listingId, uint256 _newPrice, string memory _newCid) external {
         Listing storage listing = listings[_listingId];
         require(listing.id != 0, "Listing not found");
@@ -107,10 +76,6 @@ contract EscrowChain is ReentrancyGuard {
         emit ListingUpdated(_listingId, _newPrice, _newCid);
     }
 
-    /**
-     * @dev Cancels an active listing.
-     * @param _listingId The ID of the listing to cancel.
-     */
     function cancelListing(uint256 _listingId) external {
         Listing storage listing = listings[_listingId];
         require(listing.id != 0, "Listing not found");
@@ -121,10 +86,6 @@ contract EscrowChain is ReentrancyGuard {
         emit ListingCancelled(_listingId);
     }
 
-    /**
-     * @dev Creates a new escrow by depositing the required funds.
-     * @param _listingId The ID of the listing to purchase.
-     */
     function createEscrow(uint256 _listingId) external payable {
         Listing storage listing = listings[_listingId];
         require(listing.id != 0, "Listing not found");
@@ -145,16 +106,11 @@ contract EscrowChain is ReentrancyGuard {
             updatedAt: block.timestamp
         });
 
-        // Deactivate listing so it can't be bought multiple times concurrently
         listing.isActive = false;
 
         emit EscrowCreated(escrowId, _listingId, msg.sender, listing.seller, msg.value);
     }
 
-    /**
-     * @dev Confirms receipt of the digital asset and releases funds to the seller.
-     * @param _escrowId The ID of the escrow transaction.
-     */
     function confirmReceipt(uint256 _escrowId) external nonReentrant {
         Escrow storage escrow = escrows[_escrowId];
         require(escrow.buyer == msg.sender, "Only buyer can confirm receipt");
@@ -170,10 +126,6 @@ contract EscrowChain is ReentrancyGuard {
         emit EscrowStateChanged(_escrowId, oldState, EscrowState.RELEASED);
     }
 
-    /**
-     * @dev Requests a refund from the seller.
-     * @param _escrowId The ID of the escrow transaction.
-     */
     function requestRefund(uint256 _escrowId) external {
         Escrow storage escrow = escrows[_escrowId];
         require(escrow.buyer == msg.sender, "Only buyer can request refund");
@@ -186,10 +138,6 @@ contract EscrowChain is ReentrancyGuard {
         emit EscrowStateChanged(_escrowId, oldState, EscrowState.REFUND_REQUESTED);
     }
 
-    /**
-     * @dev Approves a refund request and returns funds to the buyer.
-     * @param _escrowId The ID of the escrow transaction.
-     */
     function approveRefund(uint256 _escrowId) external nonReentrant {
         Escrow storage escrow = escrows[_escrowId];
         require(escrow.seller == msg.sender, "Only seller can approve refund");
@@ -205,10 +153,6 @@ contract EscrowChain is ReentrancyGuard {
         emit EscrowStateChanged(_escrowId, oldState, EscrowState.REFUNDED);
     }
 
-    /**
-     * @dev Rejects a refund request from the buyer.
-     * @param _escrowId The ID of the escrow transaction.
-     */
     function rejectRefund(uint256 _escrowId) external {
         Escrow storage escrow = escrows[_escrowId];
         require(escrow.seller == msg.sender, "Only seller can reject refund");
@@ -216,29 +160,16 @@ contract EscrowChain is ReentrancyGuard {
 
         EscrowState oldState = escrow.state;
 
-        // Refund request rejected by seller.
-        // Escrow remains in HELD state.
-        // Dispute resolution is outside the scope of this research.
         escrow.state = EscrowState.HELD;
         escrow.updatedAt = block.timestamp;
 
         emit EscrowStateChanged(_escrowId, oldState, EscrowState.HELD);
     }
 
-    /**
-     * @dev Gets the details of an escrow transaction.
-     * @param _id The ID of the escrow transaction.
-     * @return Escrow struct containing transaction details.
-     */
     function getEscrow(uint256 _id) external view returns (Escrow memory) {
         return escrows[_id];
     }
 
-    /**
-     * @dev Gets the details of a listing.
-     * @param _id The ID of the listing.
-     * @return Listing struct containing listing details.
-     */
     function getListing(uint256 _id) external view returns (Listing memory) {
         return listings[_id];
     }
