@@ -178,13 +178,13 @@ export function EditListingView() {
         {/* Header */}
         <div className="mb-8">
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            Edit Listing
+            Edit Listing Penjualan
           </span>
           <h1 className="text-2xl md:text-3xl font-bold mt-1 mb-2">
-            Update Listing Details
+            Perbarui Detail Listing
           </h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Perubahan metadata akan di-upload ulang ke IPFS sebagai entitas baru, dan data di smart contract akan diperbarui.
+            Perubahan metadata akan diunggah ulang ke IPFS sebagai entitas baru, dan data di Smart Contract akan diperbarui.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export function EditListingView() {
           <div className="mb-6 p-4 rounded-lg border border-warning/30 bg-warning/10 flex items-center gap-3">
             <span className="text-lg">⚠️</span>
             <div className="text-xs text-warning font-medium">
-              Hubungkan wallet Anda terlebih dahulu untuk mengedit listing.
+              Hubungkan dompet (wallet) Anda terlebih dahulu untuk mengedit listing.
             </div>
           </div>
         )}
@@ -200,7 +200,7 @@ export function EditListingView() {
         <div className="space-y-5">
           {/* Game + Tier/Rank */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Game" icon={Tag} required>
+            <Field label="Kategori Game" icon={Tag} required>
               <select
                 value={game}
                 onChange={(e) => setGame(e.target.value)}
@@ -214,7 +214,7 @@ export function EditListingView() {
                 <option value="PUBG Mobile">PUBG Mobile</option>
               </select>
             </Field>
-            <Field label="Tier / Title Akun" required>
+            <Field label="Tier / Judul Akun" required>
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
@@ -225,11 +225,11 @@ export function EditListingView() {
           </div>
 
           {/* Description */}
-          <Field label="Description & Highlights" required>
+          <Field label="Deskripsi & Detail Akun" required>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail & highlight akun: 100 Hero, 200 Skin, Gmail Bind, Full Spec."
+              placeholder="Detail & spesifikasi akun: 100 Hero, 200 Skin, Gmail Bind, Full Spec."
               rows={4}
               className="input resize-none"
             />
@@ -237,7 +237,7 @@ export function EditListingView() {
 
           {/* Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Price (IDR)" icon={DollarSign} required>
+            <Field label="Harga (IDR)" icon={DollarSign} required>
               <input
                 value={priceIDR}
                 onChange={(e) =>
@@ -250,7 +250,7 @@ export function EditListingView() {
                 className="input font-mono-num"
               />
             </Field>
-            <Field label="Equivalent (POL)" hint="Otomatis dihitung">
+            <Field label="Ekuivalen (POL)" hint="Otomatis dihitung">
               <div className="input bg-muted/20 flex items-center text-muted-foreground font-mono-num">
                 {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} POL` : "—"}
               </div>
@@ -258,7 +258,7 @@ export function EditListingView() {
           </div>
 
           {/* Image Upload */}
-          <Field label="Preview Akun (Cover Image)" hint="Format: JPG/PNG. Biarkan kosong jika tidak ingin mengubah gambar." required={false}>
+          <Field label="Foto Sampul Akun (Cover Image)" hint="Format: JPG/PNG. Biarkan kosong jika tidak ingin mengubah gambar." required={false}>
             <div className="space-y-3">
               <input
                 type="file"
@@ -332,7 +332,7 @@ export function EditListingView() {
           <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
-              <span>Update metadata → IPFS → Smart Contract.</span>
+              <span>Perbarui metadata → IPFS → Smart Contract.</span>
             </div>
             <button
               onClick={handlePublish}
@@ -340,7 +340,7 @@ export function EditListingView() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all glow-primary"
             >
               <Upload className="size-4" />
-              {publishing ? "Updating..." : "Update Listing"}
+              {publishing ? "Memperbarui..." : "Perbarui Listing"}
             </button>
           </div>
 

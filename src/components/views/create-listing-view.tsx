@@ -156,14 +156,14 @@ export function CreateListingView() {
         {/* Header */}
         <div className="mb-8">
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            Create Listing
+            Buat Listing Penjualan
           </span>
           <h1 className="text-2xl md:text-3xl font-bold mt-1 mb-2">
-            Publish new listing
+            Publikasikan Listing Baru
           </h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Cover image & metadata di-upload ke IPFS, lalu listing didaftarkan
-            di smart contract. Buyer bisa mulai escrow segera setelah publish.
+            Foto sampul & metadata diunggah ke IPFS, lalu listing didaftarkan
+            ke Smart Contract. Pembeli dapat langsung memulai transaksi escrow setelah dipublikasikan.
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export function CreateListingView() {
           <div className="mb-6 p-4 rounded-lg border border-warning/30 bg-warning/10 flex items-center gap-3">
             <span className="text-lg">⚠️</span>
             <div className="text-xs text-warning font-medium">
-              Hubungkan wallet Anda terlebih dahulu untuk publish listing.
+              Hubungkan dompet (wallet) Anda terlebih dahulu untuk mempublikasikan listing.
             </div>
           </div>
         )}
@@ -179,7 +179,7 @@ export function CreateListingView() {
         <div className="space-y-5">
           {/* Game + Tier/Rank */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Game" icon={Tag} required>
+            <Field label="Kategori Game" icon={Tag} required>
               <select
                 value={game}
                 onChange={(e) => setGame(e.target.value)}
@@ -193,7 +193,7 @@ export function CreateListingView() {
                 <option value="PUBG Mobile">PUBG Mobile</option>
               </select>
             </Field>
-            <Field label="Tier / Title Akun" required>
+            <Field label="Tier / Judul Akun" required>
               <input
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
@@ -204,11 +204,11 @@ export function CreateListingView() {
           </div>
 
           {/* Description */}
-          <Field label="Description & Highlights" required>
+          <Field label="Deskripsi & Detail Akun" required>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail & highlight akun: 100 Hero, 200 Skin, Gmail Bind, Full Spec."
+              placeholder="Detail & spesifikasi akun: 100 Hero, 200 Skin, Gmail Bind, Full Spec."
               rows={4}
               className="input resize-none"
             />
@@ -216,7 +216,7 @@ export function CreateListingView() {
 
           {/* Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Price (IDR)" icon={DollarSign} required>
+            <Field label="Harga (IDR)" icon={DollarSign} required>
               <input
                 value={priceIDR}
                 onChange={(e) =>
@@ -229,7 +229,7 @@ export function CreateListingView() {
                 className="input font-mono-num"
               />
             </Field>
-            <Field label="Equivalent (POL)" hint="Otomatis dihitung">
+            <Field label="Ekuivalen (POL)" hint="Otomatis dihitung">
               <div className="input bg-muted/20 flex items-center text-muted-foreground font-mono-num">
                 {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} POL` : "—"}
               </div>
@@ -237,7 +237,7 @@ export function CreateListingView() {
           </div>
 
           {/* Image Upload */}
-          <Field label="Preview Akun (Cover Image)" hint="Format: JPG/PNG" required>
+          <Field label="Foto Sampul Akun (Cover Image)" hint="Format: JPG/PNG" required>
             <div className="space-y-3">
               <input
                 type="file"
@@ -307,7 +307,7 @@ export function CreateListingView() {
           <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
-              <span>Image & metadata → IPFS → Smart Contract.</span>
+              <span>Foto & metadata → IPFS → Smart Contract.</span>
             </div>
             <button
               onClick={handlePublish}
@@ -315,7 +315,7 @@ export function CreateListingView() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all glow-primary"
             >
               <Upload className="size-4" />
-              {publishing ? "Publishing..." : "Publish Listing"}
+              {publishing ? "Mempublikasikan..." : "Publikasikan Listing"}
             </button>
           </div>
 
@@ -336,17 +336,17 @@ export function CreateListingView() {
         {/* Footer checklist */}
         <div className="mt-8 p-4 rounded-xl border border-border bg-muted/20">
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3">
-            Checklist
+            Kelengkapan Data Listing
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <ChecklistItem ok={!!game} label="Game name" />
-            <ChecklistItem ok={!!tier} label="Tier / Title Akun" />
-            <ChecklistItem ok={!!description} label="Description & Highlights" />
-            <ChecklistItem ok={priceNum > 0} label="Price set" />
-            <ChecklistItem ok={!!imageFile} label="Preview image" />
+            <ChecklistItem ok={!!game} label="Kategori Game dipilih" />
+            <ChecklistItem ok={!!tier} label="Tier / Judul Akun diisi" />
+            <ChecklistItem ok={!!description} label="Deskripsi & Detail diisi" />
+            <ChecklistItem ok={priceNum > 0} label="Harga IDR ditentukan" />
+            <ChecklistItem ok={!!imageFile} label="Foto Sampul diunggah" />
             <ChecklistItem
               ok={!!(discord || telegram || whatsapp)}
-              label="Contact provided"
+              label="Kontak Penjual terisi"
             />
           </div>
         </div>
