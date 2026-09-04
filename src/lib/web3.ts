@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { CONTRACT_INFO } from "./contract";
+import type { Listing } from "./types";
 const abi = CONTRACT_INFO.abi;
 
 export const CONTRACT_ADDRESS = CONTRACT_INFO.address;
@@ -184,89 +185,95 @@ export async function fetchAllListingsFromChain() {
     }
   } catch (e) {}
   
-  for (let i = 1; i <= count; i++) {
-    try {
-      const l = await contract.getListing(i);
-      
-      let metadata: any = {};
+  const ids = Array.from({ length: count }, (_, idx) => idx + 1);
+  const results = await Promise.all(
+    ids.map(async (i) => {
       try {
-        let cid = l.cid.replace("ipfs://", "").trim();
+        const l = await contract.getListing(i);
         
-        if (cid.startsWith("{")) {
-          try {
-            metadata = JSON.parse(cid);
-          } catch (e) {}
-        } else if (cid.startsWith("data:application/json;base64,")) {
-          const base64Data = cid.replace("data:application/json;base64,", "");
-          metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
-        } else if (!cid.startsWith("Qm") && !cid.startsWith("bafy") && cid.length > 20 && !cid.includes("/")) {
-          try {
-            const decoded = decodeURIComponent(escape(atob(cid)));
-            if (decoded.startsWith("{")) metadata = JSON.parse(decoded);
-          } catch (e) {}
-        }
-        
-        if (!metadata.title && !metadata.game && (cid.startsWith("Qm") || cid.startsWith("bafy"))) {
-          try {
-            const localRes = await fetch(`/api/ipfs/metadata?cid=${cid}`);
-            if (localRes.ok) {
-              const data = await localRes.json();
-              if (data && (data.game || data.title || data.name)) {
-                metadata = data;
+        let metadata: any = {};
+        try {
+          let cid = l.cid.replace("ipfs://", "").trim();
+          
+          if (cid.startsWith("{")) {
+            try {
+              metadata = JSON.parse(cid);
+            } catch (e) {}
+          } else if (cid.startsWith("data:application/json;base64,")) {
+            const base64Data = cid.replace("data:application/json;base64,", "");
+            metadata = JSON.parse(decodeURIComponent(escape(atob(base64Data))));
+          } else if (!cid.startsWith("Qm") && !cid.startsWith("bafy") && cid.length > 20 && !cid.includes("/")) {
+            try {
+              const decoded = decodeURIComponent(escape(atob(cid)));
+              if (decoded.startsWith("{")) metadata = JSON.parse(decoded);
+            } catch (e) {}
+          }
+          
+          if (!metadata.title && !metadata.game && (cid.startsWith("Qm") || cid.startsWith("bafy"))) {
+            try {
+              const localRes = await fetch(`/api/ipfs/metadata?cid=${cid}`);
+              if (localRes.ok) {
+                const data = await localRes.json();
+                if (data && (data.game || data.title || data.name)) {
+                  metadata = data;
+                }
+              }
+            } catch (e) {}
+
+            if (!metadata.title && !metadata.game) {
+              const gateways = [
+                `https://cloudflare-ipfs.com/ipfs/${cid}`,
+                `https://dweb.link/ipfs/${cid}`,
+                `https://ipfs.io/ipfs/${cid}`,
+              ];
+              
+              try {
+                metadata = await Promise.any(
+                  gateways.map(async (url) => {
+                    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+                    if (!res.ok) throw new Error("Gateway failed");
+                    return await res.json();
+                  })
+                );
+              } catch (err) {
+                // all gateways failed or timed out
               }
             }
-          } catch (e) {}
-
-          if (!metadata.title && !metadata.game) {
-            const gateways = [
-              `https://cloudflare-ipfs.com/ipfs/${cid}`,
-              `https://dweb.link/ipfs/${cid}`,
-              `https://ipfs.io/ipfs/${cid}`,
-            ];
-            
-            try {
-              metadata = await Promise.any(
-                gateways.map(async (url) => {
-                  const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-                  if (!res.ok) throw new Error("Gateway failed");
-                  return await res.json();
-                })
-              );
-            } catch (err) {
-              // all gateways failed or timed out
-            }
           }
+        } catch (e) {
+          console.warn("Failed to fetch/parse metadata for listing", i, e);
         }
+        
+        const priceMatic = Number(ethers.formatEther(l.price));
+        
+        return {
+          id: `L-${String(i).padStart(3, "0")}`,
+          game: metadata.game || "Unknown",
+          title: metadata.title || "Unknown",
+          tier: metadata.tier || "Unknown",
+          description: metadata.description || "",
+          priceIDR: Math.round(priceMatic * liveRate),
+          priceMatic,
+          imageUrl: metadata.image || "",
+          seller: l.seller,
+          sellerName: "Seller",
+          discord: metadata.discord,
+          telegram: metadata.telegram,
+          whatsapp: metadata.whatsapp,
+          cid: l.cid,
+          status: (l.isActive ? "AVAILABLE" : "SOLD") as Listing["status"],
+          createdAt: Date.now() - (count - i) * 60000, // Approximate ordering
+          features: metadata.features || [],
+        };
       } catch (e) {
-        console.warn("Failed to fetch/parse metadata for listing", i, e);
+        console.error(`Failed to fetch listing ${i}`, e);
+        return null;
       }
-      
-      const priceMatic = Number(ethers.formatEther(l.price));
-      
-      listings.push({
-        id: `L-${String(i).padStart(3, "0")}`,
-        game: metadata.game || "Unknown",
-        title: metadata.title || "Unknown",
-        tier: metadata.tier || "Unknown",
-        description: metadata.description || "",
-        priceIDR: Math.round(priceMatic * liveRate),
-        priceMatic,
-        imageUrl: metadata.image || "",
-        seller: l.seller,
-        sellerName: "Seller",
-        discord: metadata.discord,
-        telegram: metadata.telegram,
-        whatsapp: metadata.whatsapp,
-        cid: l.cid,
-        status: l.isActive ? "AVAILABLE" : "SOLD",
-        createdAt: Date.now(), // Fallback since on-chain doesn't store creation time for listing
-        features: metadata.features || [],
-      });
-    } catch (e) {
-      console.error(`Failed to fetch listing ${i}`, e);
-    }
-  }
-  return listings.reverse(); // newest first
+    })
+  );
+
+  const validListings = results.filter((item): item is NonNullable<typeof item> => item !== null);
+  return validListings.reverse(); // newest first
 }
 
 export async function fetchAllEscrowsFromChain() {

@@ -122,6 +122,31 @@ export function CreateListingView() {
         cid: metaCid,
       }, listingId);
 
+      // Simpan ke database Neon di background untuk instant load
+      fetch("/api/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          onChainId: listingId,
+          game: game.trim(),
+          title: listingTitle,
+          tier: tier.trim(),
+          description: description.trim(),
+          priceIDR: priceNum,
+          priceMatic: Number(priceMatic.toFixed(4)),
+          imageUrl,
+          seller: wallet.address,
+          sellerName: "You",
+          discord: discord.trim() || undefined,
+          telegram: telegram.trim() || undefined,
+          whatsapp: whatsapp.trim() || undefined,
+          features: featuresArr,
+          cid: metaCid || base64Cid,
+          status: "AVAILABLE",
+        }),
+      }).catch((e) => console.warn("Background DB sync error:", e));
+
       setPublishing(false);
       setPublishStep("");
       toast({

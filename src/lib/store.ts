@@ -178,7 +178,41 @@ export const useListingsStore = create<ListingsStore>()((set, get) => ({
     }));
   },
   syncListings: async () => {
-    set({ isSyncing: true });
+    // 1. FAST PATH: Ambil langsung dari cache Neon DB dalam waktu ~50ms
+    try {
+      const dbRes = await fetch("/api/listings", { cache: "no-store" });
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        if (dbData.success && Array.isArray(dbData.listings) && dbData.listings.length > 0) {
+          const mappedListings: Listing[] = dbData.listings.map((row: any) => ({
+            id: row.id,
+            game: row.game || "Unknown",
+            title: row.title || "Unknown",
+            tier: row.tier || "",
+            description: row.description || "",
+            priceIDR: Number(row.price_idr) || 0,
+            priceMatic: Number(row.price_matic) || 0,
+            imageUrl: row.image_url || "",
+            seller: row.seller_address,
+            sellerName: row.seller_name || "Seller",
+            discord: row.discord,
+            telegram: row.telegram,
+            whatsapp: row.whatsapp,
+            cid: row.cid,
+            status: row.status as any,
+            createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+            features: Array.isArray(row.features) ? row.features : [],
+          }));
+
+          // Langsung tampilkan ke pengguna seketika (0 detik loading)!
+          set({ listings: mappedListings, isSyncing: false });
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Fast DB listings fetch error:", dbErr);
+    }
+
+    // 2. BACKGROUND SYNC: Sinkronisasi data terbaru dari on-chain secara paralel
     try {
       const { fetchAllListingsFromChain } = await import("./web3");
       const onChainListings = await fetchAllListingsFromChain();
@@ -196,10 +230,9 @@ export const useListingsStore = create<ListingsStore>()((set, get) => ({
       });
       
       mergedListings.sort((a, b) => b.createdAt - a.createdAt);
-      
       set({ listings: mergedListings, isSyncing: false });
     } catch (err) {
-      console.error("Failed to sync listings", err);
+      console.error("Failed to sync on-chain listings", err);
       set({ isSyncing: false });
     }
   },
