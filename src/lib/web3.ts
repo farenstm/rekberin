@@ -174,6 +174,15 @@ export async function fetchAllListingsFromChain() {
   const nextId = await contract.nextListingId();
   const count = Number(nextId) - 1;
   const listings: any[] = [];
+
+  let liveRate = 1660;
+  try {
+    const pRes = await fetch("/api/price");
+    if (pRes.ok) {
+      const pData = await pRes.json();
+      if (pData?.polIdr) liveRate = pData.polIdr;
+    }
+  } catch (e) {}
   
   for (let i = 1; i <= count; i++) {
     try {
@@ -240,7 +249,7 @@ export async function fetchAllListingsFromChain() {
         title: metadata.title || "Unknown",
         tier: metadata.tier || "Unknown",
         description: metadata.description || "",
-        priceIDR: priceMatic * 6200,
+        priceIDR: Math.round(priceMatic * liveRate),
         priceMatic,
         imageUrl: metadata.image || "",
         seller: l.seller,

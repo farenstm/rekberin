@@ -20,9 +20,11 @@ import { cn } from "@/lib/utils";
 // removed emojis and colors
 
 import { useToast } from "@/hooks/use-toast";
+import { usePolPrice } from "@/lib/price";
 
 export function CreateListingView() {
   const { toast } = useToast();
+  const { polPrice } = usePolPrice();
   const setView = useAppStore((s) => s.setView);
   const openListing = useAppStore((s) => s.openListing);
   const createListing = useListingsStore((s) => s.createListing);
@@ -41,7 +43,7 @@ export function CreateListingView() {
   const [publishStep, setPublishStep] = useState<string>("");
 
   const priceNum = parseInt(priceIDR.replace(/\D/g, ""), 10) || 0;
-  const priceMatic = priceNum / 6200; // ~ Rp6.200 / POL (Market price)
+  const priceMatic = polPrice > 0 && priceNum > 0 ? priceNum / polPrice : 0;
 
   const canPublish =
     game.trim() &&
@@ -225,7 +227,10 @@ export function CreateListingView() {
                 className="input font-mono-num"
               />
             </Field>
-            <Field label="Ekuivalen (POL)" hint="Otomatis dihitung">
+            <Field
+              label="Ekuivalen (POL)"
+              hint={polPrice ? `Kurs Real-Time: Rp${polPrice.toLocaleString("id-ID")}/POL` : "Otomatis dihitung"}
+            >
               <div className="input bg-muted/20 flex items-center text-muted-foreground font-mono-num">
                 {priceMatic > 0 ? `≈ ${priceMatic.toFixed(4)} POL` : "—"}
               </div>
