@@ -161,10 +161,6 @@ export function CreateListingView() {
           <h1 className="text-2xl md:text-3xl font-bold mt-1 mb-2">
             Publikasikan Listing Baru
           </h1>
-          <p className="text-sm text-muted-foreground max-w-xl">
-            Foto sampul & metadata diunggah ke IPFS, lalu listing didaftarkan
-            ke Smart Contract. Pembeli dapat langsung memulai transaksi escrow setelah dipublikasikan.
-          </p>
         </div>
 
         {wallet.status !== "connected" && (
